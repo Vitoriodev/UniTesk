@@ -4,6 +4,42 @@ Todas as alterações, correções e melhorias feitas no Unitesk.
 
 ---
 
+## [1.2.0] — Julho 2026
+
+### 🆕 Novas Funcionalidades
+
+#### 📅 Agendamento de Documentos (Artigos)
+- **Status "Agendado"** — Documentos agora podem ser agendados para uma data futura 📅
+- **Campo de data** — Novo campo "Agendar para" no formulário de criação de documentos
+- **Filtro "Agendados"** — Aba dedicada para filtrar documentos agendados
+- **Indicador visual** — Data de agendamento exibida nos cards de documentos
+- **Migração automática** — Status de versões anteriores são migrados automaticamente
+
+#### 📅 Navegação Rápida no Calendário
+- **Seletor combinado mês/ano** — Novo input `<input type="month">` para selecionar mês e ano simultaneamente
+- **Navegação mais rápida** — Permite ir diretamente para qualquer mês/ano em um único clique
+
+#### 📊 Dashboard Aprimorado
+- **Removido botão "Verificar Atualizações"** — Simplificação das ações rápidas
+- **Design mais limpo** — Ações essenciais em destaque
+
+### 🐛 Correções
+
+#### Tema (UI)
+- **Hitbox do botão de tema corrigida** — Agora o botão inteiro (44×44px) é clicável, não apenas um canto específico
+- **Botão reposicionado** — Centralizado verticalmente no header com design mais destacado
+- **Contraste nos selects do calendário** — Corrigido fundo branco com texto branco no tema Dracula
+- **Estilo `option` nos selects** — Cores agora seguem o tema (claro/escuro) corretamente
+
+### 🔧 Alterações de Configuração
+
+#### Instalação Otimizada
+- **npm ci** — Instalação mais rápida usando `npm ci` quando `package-lock.json` existe
+- **Flags de desempenho** — `--no-fund --no-audit` para acelerar instalação
+- **Build incremental** — Melhor aproveitamento do cache do Cargo
+
+---
+
 ## [1.1.0] — Julho 2026
 
 ### 🆕 Novas Funcionalidades

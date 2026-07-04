@@ -44,24 +44,13 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div style={{ position: "absolute", right: 24, top: 24 }}>
-          <button
-            className="btn btn-sm"
-            onClick={toggleTheme}
-            title={theme === "dracula" ? "Tema Claro" : "Tema Dracula"}
-            style={{
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: "var(--radius-sm)",
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: "1rem",
-              color: "white",
-            }}
-          >
-            {theme === "dracula" ? "☀️" : "🌙"}
-          </button>
-        </div>
+        <button
+          className="theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === "dracula" ? "Tema Claro" : "Tema Dracula"}
+        >
+          {theme === "dracula" ? "☀️" : "🌙"}
+        </button>
         <h1>
           <span className="logo-icon">🎓</span> Unitesk
         </h1>

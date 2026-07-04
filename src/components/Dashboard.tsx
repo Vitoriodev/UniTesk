@@ -24,31 +24,6 @@ interface Assignment {
 
 type Tab = "dashboard" | "projects" | "calendar" | "articles";
 
-interface UpdateInfo {
-  version: string;
-  download_url: string;
-  release_notes?: string;
-}
-
-// URL do manifesto de atualização (configurável)
-const UPDATE_MANIFEST_URL = localStorage.getItem("unitesk_update_url") ||
-  "https://api.github.com/repos/Vitoriodev/UniTesk/releases/latest";
-
-const CURRENT_VERSION = "1.1.0";
-
-// Comparação semântica simples de versões ("1.1.0" > "1.0.0")
-function isNewerVersion(latest: string, current: string): boolean {
-  const latestParts = latest.replace(/^v/, "").split(".").map(Number);
-  const currentParts = current.replace(/^v/, "").split(".").map(Number);
-  for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
-    const l = latestParts[i] || 0;
-    const c = currentParts[i] || 0;
-    if (l > c) return true;
-    if (l < c) return false;
-  }
-  return false;
-}
-
 // Contador animado — anima de 0 até o valor final em ~400ms
 function AnimatedCounter({ value, duration = 400 }: { value: number; duration?: number }) {
   const [displayValue, setDisplayValue] = useState(0);
@@ -93,12 +68,6 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
   const [exporting, setExporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [statsLoaded, setStatsLoaded] = useState(false);
-  const [updating, setUpdating] = useState(false);
-  const [updateResult, setUpdateResult] = useState<{
-    type: "success" | "error" | "uptodate";
-    message: string;
-    data?: UpdateInfo;
-  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -234,50 +203,6 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
       color: "var(--stat-overdue)",
     },
   ];
-
-  async function checkForUpdates() {
-    setUpdating(true);
-    setUpdateResult(null);
-    try {
-      const response = await fetch(UPDATE_MANIFEST_URL, {
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-
-      // Suporta formato GitHub Releases e formato customizado
-      const latestVersion = data.tag_name?.replace(/^v/, "") || data.version;
-      const downloadUrl = data.assets?.[0]?.browser_download_url || data.download_url;
-      const releaseNotes = data.body || data.release_notes;
-
-      if (!latestVersion) throw new Error("Formato de resposta inválido");
-
-      if (isNewerVersion(latestVersion, CURRENT_VERSION)) {
-        setUpdateResult({
-          type: "success",
-          message: `Nova versão ${latestVersion} disponível!`,
-          data: {
-            version: latestVersion,
-            download_url: downloadUrl || "",
-            release_notes: releaseNotes,
-          },
-        });
-      } else {
-        setUpdateResult({
-          type: "uptodate",
-          message: `✅ Você já está usando a versão mais recente (v${CURRENT_VERSION}).`,
-        });
-      }
-    } catch (err) {
-      setUpdateResult({
-        type: "error",
-        message: `❌ Erro ao verificar atualizações: ${err instanceof Error ? err.message : "Falha na conexão"}`,
-      });
-    } finally {
-      setUpdating(false);
-    }
-  }
 
   const getAssignmentIcon = (status: string) => {
     switch (status) {
@@ -512,14 +437,6 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
               >
                 {exporting ? "⏳" : "📤 Exportar"}
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={checkForUpdates}
-                disabled={updating}
-                style={{ justifyContent: "center", padding: "12px 16px" }}
-              >
-                {updating ? "⏳" : "📥 Verificar Atualizações"}
-              </button>
             </div>
 
             <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--border)" }} />
@@ -587,67 +504,7 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
         </div>
       </div>
 
-      {/* Update Result Modal */}
-      {updateResult && (
-        <div
-          className="modal-overlay"
-          onClick={() => setUpdateResult(null)}
-        >
-          <div
-            className="modal update-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>
-              {updateResult.type === "success"
-                ? "📥 Atualização Disponível"
-                : updateResult.type === "uptodate"
-                ? "✅ Atualizado"
-                : "❌ Erro"}
-            </h2>
 
-            <p style={{ marginBottom: 16, lineHeight: 1.6 }}>{updateResult.message}</p>
-
-            {updateResult.data?.release_notes && (
-              <div
-                style={{
-                  background: "var(--bg)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: 16,
-                  marginBottom: 16,
-                  fontSize: "0.85rem",
-                  lineHeight: 1.6,
-                  maxHeight: 200,
-                  overflowY: "auto",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                <strong style={{ display: "block", marginBottom: 8 }}>📋 Notas da Versão:</strong>
-                {updateResult.data.release_notes}
-              </div>
-            )}
-
-            <div className="modal-actions">
-              {updateResult.data?.download_url && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    window.open(updateResult.data!.download_url, "_blank");
-                    setUpdateResult(null);
-                  }}
-                >
-                  ⬇️ Baixar Atualização
-                </button>
-              )}
-              <button
-                className="btn btn-secondary"
-                onClick={() => setUpdateResult(null)}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

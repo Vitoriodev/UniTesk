@@ -9,11 +9,12 @@ interface Article {
   created_at: string;
 }
 
-type ArticleStatus = "draft" | "published";
-type FilterTab = "all" | "draft" | "published";
+type ArticleStatus = "draft" | "published" | "scheduled";
+type FilterTab = "all" | "draft" | "published" | "scheduled";
 
 interface ArticleExtended extends Article {
   status: ArticleStatus;
+  scheduled_date?: string;
 }
 
 function ArticleManager() {
@@ -26,6 +27,7 @@ function ArticleManager() {
     title: "",
     content: "",
     project_name: "",
+    scheduled_date: "",
   });
 
   useEffect(() => {
@@ -52,33 +54,68 @@ function ArticleManager() {
     }
   }
 
-  // Salva/recupera todos os status em uma única chave do localStorage
-  function getStatusMap(): Record<number, ArticleStatus> {
+  // Migração: ler status da chave antiga (v1) se a nova (v2) não existir
+  function migrateOldStatuses(): Record<number, { status: ArticleStatus; scheduled_date?: string }> {
+    const oldData = localStorage.getItem("unitesk_article_statuses");
+    if (!oldData) return {};
     try {
-      return JSON.parse(localStorage.getItem("unitesk_article_statuses") || "{}");
+      const oldMap: Record<number, string> = JSON.parse(oldData);
+      const newMap: Record<number, { status: ArticleStatus; scheduled_date?: string }> = {};
+      for (const [id, status] of Object.entries(oldMap)) {
+        const s = status === "published" ? "published" : "draft";
+        newMap[Number(id)] = { status: s };
+      }
+      localStorage.setItem("unitesk_article_statuses_v2", JSON.stringify(newMap));
+      localStorage.removeItem("unitesk_article_statuses");
+      return newMap;
     } catch {
       return {};
     }
   }
 
-  function saveStatusMap(map: Record<number, ArticleStatus>) {
-    localStorage.setItem("unitesk_article_statuses", JSON.stringify(map));
+  // Salva/recupera todos os status em uma única chave do localStorage
+  function getStatusMap(): Record<number, { status: ArticleStatus; scheduled_date?: string }> {
+    try {
+      const data = localStorage.getItem("unitesk_article_statuses_v2");
+      if (!data) {
+        // Tentar migrar da chave antiga
+        return migrateOldStatuses();
+      }
+      return JSON.parse(data);
+    } catch {
+      return {};
+    }
+  }
+
+  function saveStatusMap(map: Record<number, { status: ArticleStatus; scheduled_date?: string }>) {
+    localStorage.setItem("unitesk_article_statuses_v2", JSON.stringify(map));
   }
 
   function enrichArticle(a: Article): ArticleExtended {
     const statusMap = getStatusMap();
-    const status: ArticleStatus = statusMap[a.id] === "published" ? "published" : "draft";
-    return { ...a, status };
+    const entry = statusMap[a.id];
+    if (entry) {
+      return { ...a, status: entry.status, scheduled_date: entry.scheduled_date };
+    }
+    return { ...a, status: "draft" };
   }
 
   async function toggleArticleStatus(id: number) {
     const statusMap = getStatusMap();
-    const newStatus: ArticleStatus = statusMap[id] === "published" ? "draft" : "published";
-    statusMap[id] = newStatus;
+    const entry = statusMap[id] || { status: "draft" as ArticleStatus };
+    if (entry.status === "draft") {
+      entry.status = "published";
+    } else if (entry.status === "published") {
+      entry.status = "draft";
+    } else if (entry.status === "scheduled") {
+      entry.status = "published";
+      delete entry.scheduled_date;
+    }
+    statusMap[id] = entry;
     saveStatusMap(statusMap);
 
     const updatedArticles = articles.map((a) =>
-      a.id === id ? { ...a, status: newStatus } : a
+      a.id === id ? { ...a, status: entry.status, scheduled_date: entry.scheduled_date } : a
     );
     setArticles(updatedArticles);
     localStorage.setItem("unitesk_articles", JSON.stringify(updatedArticles));
@@ -86,6 +123,10 @@ function ArticleManager() {
 
   async function createArticle() {
     if (!newArticle.title) return;
+    
+    const hasSchedule = !!newArticle.scheduled_date;
+    const initialStatus: ArticleStatus = hasSchedule ? "scheduled" : "draft";
+    
     try {
       await invoke("create_article", {
         title: newArticle.title,
@@ -102,11 +143,12 @@ function ArticleManager() {
         content: newArticle.content,
         project_name: newArticle.project_name,
         created_at: new Date().toISOString(),
-        status: "draft",
+        status: initialStatus,
+        scheduled_date: hasSchedule ? newArticle.scheduled_date : undefined,
       };
       // Salvar status no mapa
       const statusMap = getStatusMap();
-      statusMap[newId] = "draft";
+      statusMap[newId] = { status: initialStatus, scheduled_date: hasSchedule ? newArticle.scheduled_date : undefined };
       saveStatusMap(statusMap);
 
       const updated = [...articles, newArt];
@@ -117,7 +159,7 @@ function ArticleManager() {
   }
 
   function resetForm() {
-    setNewArticle({ title: "", content: "", project_name: "" });
+    setNewArticle({ title: "", content: "", project_name: "", scheduled_date: "" });
     setShowModal(false);
   }
 
@@ -147,6 +189,8 @@ function ArticleManager() {
       filtered = filtered.filter((a) => a.status === "draft");
     } else if (activeFilter === "published") {
       filtered = filtered.filter((a) => a.status === "published");
+    } else if (activeFilter === "scheduled") {
+      filtered = filtered.filter((a) => a.status === "scheduled");
     }
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -165,6 +209,7 @@ function ArticleManager() {
       total: articles.length,
       drafts: articles.filter((a) => a.status === "draft").length,
       published: articles.filter((a) => a.status === "published").length,
+      scheduled: articles.filter((a) => a.status === "scheduled").length,
     };
   }, [articles]);
 
@@ -199,9 +244,10 @@ function ArticleManager() {
 
       {/* Filtros de status */}
       <div className="filter-tabs">
-        {getFilterTab("all", "Todos", stats.total)}
-        {getFilterTab("draft", "📝 Rascunhos", stats.drafts)}
-        {getFilterTab("published", "✅ Prontos", stats.published)}
+      {getFilterTab("all", "Todos", stats.total)}
+      {getFilterTab("draft", "📝 Rascunhos", stats.drafts)}
+      {getFilterTab("scheduled", "📅 Agendados", stats.scheduled)}
+      {getFilterTab("published", "✅ Prontos", stats.published)}
       </div>
 
       {/* Busca */}
@@ -230,6 +276,8 @@ function ArticleManager() {
               ? "Nenhum documento encontrado para esta busca."
               : activeFilter === "draft"
               ? "Nenhum rascunho ainda."
+              : activeFilter === "scheduled"
+              ? "Nenhum documento agendado."
               : activeFilter === "published"
               ? "Nenhum documento pronto ainda."
               : "Nenhum documento cadastrado."}
@@ -265,9 +313,13 @@ function ArticleManager() {
                   <button
                     className={`btn btn-sm ${article.status === "published" ? "btn-outline-primary" : "btn-success"}`}
                     onClick={() => toggleArticleStatus(article.id)}
-                    title={article.status === "draft" ? "Marcar como pronto" : "Voltar para rascunho"}
+                    title={
+                      article.status === "draft" ? "Marcar como pronto" : 
+                      article.status === "scheduled" ? "Marcar como pronto" :
+                      "Voltar para rascunho"
+                    }
                   >
-                    {article.status === "draft" ? "✅" : "📝"}
+                    {article.status === "draft" || article.status === "scheduled" ? "✅" : "📝"}
                   </button>
                   <button
                     className="btn btn-danger btn-sm"
@@ -280,8 +332,12 @@ function ArticleManager() {
               </div>
 
               <div className="article-card-status">
-                <span className={`badge ${article.status === "draft" ? "badge-draft" : "badge-published"}`}>
-                  {article.status === "draft" ? "📝 Rascunho" : "✅ Pronto"}
+                <span className={`badge ${
+                  article.status === "draft" ? "badge-draft" : 
+                  article.status === "scheduled" ? "badge-scheduled" : "badge-published"
+                }`}>
+                  {article.status === "draft" ? "📝 Rascunho" : 
+                   article.status === "scheduled" ? "📅 Agendado" : "✅ Pronto"}
                 </span>
                 {article.project_name && (
                   <span className="badge badge-progress">
@@ -292,6 +348,17 @@ function ArticleManager() {
                   {new Date(article.created_at).toLocaleDateString("pt-BR")}
                 </span>
               </div>
+
+              {article.scheduled_date && (
+                <div className="scheduled-date-info">
+                  📅 Agendado para: {new Date(article.scheduled_date + "T12:00:00").toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+              )}
 
               <p
                 style={{
@@ -345,8 +412,12 @@ function ArticleManager() {
               <div>
                 <h2 style={{ marginBottom: 4 }}>{viewingArticle.title}</h2>
                 <div className="article-card-status">
-                  <span className={`badge ${viewingArticle.status === "draft" ? "badge-draft" : "badge-published"}`}>
-                    {viewingArticle.status === "draft" ? "📝 Rascunho" : "✅ Pronto"}
+                  <span className={`badge ${
+                    viewingArticle.status === "draft" ? "badge-draft" : 
+                    viewingArticle.status === "scheduled" ? "badge-scheduled" : "badge-published"
+                  }`}>
+                    {viewingArticle.status === "draft" ? "📝 Rascunho" : 
+                     viewingArticle.status === "scheduled" ? "📅 Agendado" : "✅ Pronto"}
                   </span>
                   {viewingArticle.project_name && (
                     <span className="badge badge-progress">
@@ -430,8 +501,25 @@ function ArticleManager() {
               />
             </div>
             <div className="form-group">
+              <label>📅 Agendar para (opcional)</label>
+              <input
+                className="form-input"
+                type="date"
+                value={newArticle.scheduled_date}
+                onChange={(e) =>
+                  setNewArticle({ ...newArticle, scheduled_date: e.target.value })
+                }
+              />
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: 4 }}>
+                Selecione uma data futura para agendar a entrega deste documento.
+              </p>
+            </div>
+            <div className="form-group">
               <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                💡 O documento será salvo como <strong>Rascunho</strong>. Você poderá marcá-lo como <strong>Pronto</strong> depois.
+                💡 {newArticle.scheduled_date 
+                  ? `O documento será salvo como <strong>Agendado</strong> para ${new Date(newArticle.scheduled_date + "T12:00:00").toLocaleDateString("pt-BR")}.`
+                  : `O documento será salvo como <strong>Rascunho</strong>. Você poderá marcá-lo como <strong>Pronto</strong> depois.`
+                }
               </p>
             </div>
             <div className="modal-actions">

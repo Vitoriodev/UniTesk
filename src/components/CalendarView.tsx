@@ -443,7 +443,7 @@ function CalendarView() {
                 className="calendar-nav-select"
                 value={currentMonth}
                 onChange={(e) => goToMonth(Number(e.target.value))}
-                style={{ minWidth: 120 }}
+                style={{ minWidth: 120, fontWeight: 500 }}
               >
                 {monthNames.map((name, idx) => (
                   <option key={name} value={idx}>{name}</option>
@@ -453,7 +453,7 @@ function CalendarView() {
                 className="calendar-nav-select"
                 value={currentYear}
                 onChange={(e) => goToYear(Number(e.target.value))}
-                style={{ minWidth: 85 }}
+                style={{ minWidth: 85, fontWeight: 500 }}
               >
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -463,9 +463,23 @@ function CalendarView() {
                 →
               </button>
             </div>
-            <button className="btn btn-outline-primary btn-sm" onClick={goToToday}>
-              📅 Hoje
-            </button>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input
+                className="calendar-nav-select"
+                type="month"
+                value={`${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCurrentYear(year);
+                  setCurrentMonth(month - 1);
+                }}
+                style={{ maxWidth: 160 }}
+                title="Selecionar mês e ano diretamente"
+              />
+              <button className="btn btn-outline-primary btn-sm" onClick={goToToday}>
+                📅 Hoje
+              </button>
+            </div>
           </div>
 
           <div className="calendar-grid">

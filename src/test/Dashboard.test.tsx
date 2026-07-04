@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dashboard from "../components/Dashboard";
@@ -211,81 +211,6 @@ describe("Dashboard", () => {
     });
   });
 
-  describe("Update Check", () => {
-    const originalFetch = globalThis.fetch;
-
-    afterEach(() => {
-      globalThis.fetch = originalFetch;
-    });
-
-    it("shows update button", async () => {
-      render(<Dashboard />);
-      await waitFor(() => {
-        expect(screen.getByText("📥 Verificar Atualizações")).toBeInTheDocument();
-      });
-    });
-
-    it("shows up-to-date message when no update available", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ tag_name: "v1.1.0", assets: [{ browser_download_url: "" }] }),
-      });
-
-      const user = userEvent.setup();
-      render(<Dashboard />);
-
-      await waitFor(() => {
-        expect(screen.getByText("📥 Verificar Atualizações")).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByText("📥 Verificar Atualizações"));
-
-      await waitFor(() => {
-        expect(screen.getByText(/versão mais recente/)).toBeInTheDocument();
-      });
-    });
-
-    it("shows update available message when newer version exists", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          tag_name: "v2.0.0",
-          assets: [{ browser_download_url: "https://example.com/unitesk.deb" }],
-          body: "Novas funcionalidades incríveis!",
-        }),
-      });
-
-      const user = userEvent.setup();
-      render(<Dashboard />);
-
-      await waitFor(() => {
-        expect(screen.getByText("📥 Verificar Atualizações")).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByText("📥 Verificar Atualizações"));
-
-      await waitFor(() => {
-        expect(screen.getByText(/Atualização Disponível/)).toBeInTheDocument();
-      });
-      expect(screen.getByText(/Baixar Atualização/)).toBeInTheDocument();
-      expect(screen.getByText(/Novas funcionalidades incríveis/)).toBeInTheDocument();
-    });
-
-    it("shows error message when fetch fails", async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-      const user = userEvent.setup();
-      render(<Dashboard />);
-
-      await waitFor(() => {
-        expect(screen.getByText("📥 Verificar Atualizações")).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByText("📥 Verificar Atualizações"));
-
-      await waitFor(() => {
-        expect(screen.getByText(/Erro ao verificar atualizações/)).toBeInTheDocument();
-      });
-    });
-  });
+  // NOTA: Testes de verificação de atualizações removidos —
+  // o botão "Verificar Atualizações" foi removido do Dashboard.
 });

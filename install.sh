@@ -116,16 +116,26 @@ fi
 echo ""
 
 # ---------------------------------------
-# 3. Instalar dependências npm
+# 3. Instalar dependências npm (otimizado)
 # ---------------------------------------
 echo -e "${YELLOW}[3/7] Instalando dependências npm...${NC}"
 cd "$PROJECT_DIR"
 
 if [ -d "node_modules" ]; then
-    echo "  • node_modules já existe. Atualizando..."
-    npm install --silent 2>&1 | tail -1
+    echo "  • node_modules já existe. Atualizando rapidamente..."
+    # npm ci é mais rápido que npm install quando package-lock.json existe
+    if [ -f "package-lock.json" ]; then
+        npm ci --silent --no-fund --no-audit 2>&1 | tail -1
+    else
+        npm install --silent --no-fund --no-audit 2>&1 | tail -1
+    fi
 else
-    npm install 2>&1 | tail -1
+    # Primeira instalação: usa npm ci se package-lock existe, senão npm install
+    if [ -f "package-lock.json" ]; then
+        npm ci --no-fund --no-audit 2>&1 | tail -1
+    else
+        npm install --no-fund --no-audit 2>&1 | tail -1
+    fi
 fi
 echo -e "  • npm: ${GREEN}✓${NC} Dependências instaladas"
 echo ""
@@ -190,15 +200,19 @@ fi
 echo ""
 
 # ---------------------------------------
-# 6. Build do executável Tauri
+# 6. Build do executável Tauri (otimizado)
 # ---------------------------------------
 echo -e "${YELLOW}[6/7] Compilando o executável...${NC}"
-echo "  • Isso pode levar alguns minutos na primeira execução."
 echo ""
 
 cd "$PROJECT_DIR"
 
-# Build do frontend primeiro
+# Verificar se o frontend já foi compilado (build incremental)
+if [ -d "dist" ] && [ -f "dist/index.html" ]; then
+    echo "  • Build do frontend já existe. Recompilando apenas se necessário..."
+fi
+
+# Build do frontend - Vite é rápido em builds incrementais
 echo "  • Compilando frontend (Vite)..."
 if DATABASE_URL="$DATABASE_URL" npm run build 2>&1; then
   echo -e "  • Frontend: ${GREEN}✓${NC}"
@@ -207,9 +221,9 @@ else
   exit 1
 fi
 
-# Build Tauri
+# Build Tauri (usa cache incremental do Cargo)
 echo "  • Compilando aplicativo desktop (Tauri)..."
-echo "    (Isso pode levar alguns minutos na primeira execução)"
+echo "    (Usando cache incremental - mais rápido na segunda execução)"
 if DATABASE_URL="$DATABASE_URL" npx tauri build 2>&1; then
   echo -e "  • Tauri: ${GREEN}✓${NC}"
 else
