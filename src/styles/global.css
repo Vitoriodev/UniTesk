@@ -397,11 +397,19 @@ body {
 [data-theme="dracula"] .calendar-nav-select {
   background: var(--bg-card);
   color: var(--text);
+  color-scheme: dark;
 }
 
 [data-theme="dracula"] .calendar-nav-select option {
   background: #1e1e2e;
   color: #f8f8f2;
+}
+
+/* Garantir contraste no input type="month" e type="date" no tema escuro */
+[data-theme="dracula"] input[type="month"],
+[data-theme="dracula"] input[type="date"],
+[data-theme="dracula"] input[type="time"] {
+  color-scheme: dark;
 }
 
 .calendar-grid {
