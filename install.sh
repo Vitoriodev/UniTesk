@@ -218,7 +218,7 @@ else
 fi
 
 BINARY_PATH="$PROJECT_DIR/src-tauri/target/release/unitesk"
-DEB_PATH="$PROJECT_DIR/src-tauri/target/release/bundle/deb/unitesk_1.0.0_amd64.deb"
+DEB_PATH="$PROJECT_DIR/src-tauri/target/release/bundle/deb/Unitesk_1.1.0_amd64.deb"
 
 echo ""
 

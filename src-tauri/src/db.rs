@@ -42,9 +42,9 @@ pub struct ExportedAssignmentFile {
 }
 
 pub async fn export_all_data(pool: &PgPool) -> Result<ExportedData, String> {
-    let projects = get_projects(pool).await.map_err(|e| e.to_string())?;
-    let articles = get_articles(pool).await.map_err(|e| e.to_string())?;
-    let assignments = get_assignments(pool).await.map_err(|e| e.to_string())?;
+    let projects = get_projects(pool).await.map_err(|_| "Erro ao exportar projetos".to_string())?;
+    let articles = get_articles(pool).await.map_err(|_| "Erro ao exportar artigos".to_string())?;
+    let assignments = get_assignments(pool).await.map_err(|_| "Erro ao exportar atividades".to_string())?;
 
     // Buscar arquivos de projeto com dados binários
     let project_files_raw: Vec<(i32, String, String, i64, String, String, Vec<u8>)> = sqlx::query_as(
@@ -52,7 +52,7 @@ pub async fn export_all_data(pool: &PgPool) -> Result<ExportedData, String> {
     )
     .fetch_all(pool)
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|_| "Erro ao exportar arquivos de projeto".to_string())?;
 
     let project_files: Vec<ExportedProjectFile> = project_files_raw
         .into_iter()
@@ -73,7 +73,7 @@ pub async fn export_all_data(pool: &PgPool) -> Result<ExportedData, String> {
     )
     .fetch_all(pool)
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|_| "Erro ao exportar arquivos de atividade".to_string())?;
 
     let assignment_files: Vec<ExportedAssignmentFile> = assignment_files_raw
         .into_iter()
@@ -111,7 +111,7 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
         .bind(&project.description)
         .fetch_one(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|_| "Erro ao importar projeto".to_string())?;
         project_id_map.insert(project.id, new_project.id);
     }
 
@@ -127,7 +127,7 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
         .bind(new_project_id)
         .execute(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|_| "Erro ao importar artigo".to_string())?;
     }
 
     // Importar atividades (mapear IDs antigos para novos)
@@ -146,7 +146,7 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
         .bind(&assignment.status)
         .fetch_one(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|_| "Erro ao importar atividade".to_string())?;
         assignment_id_map.insert(assignment.id, new_assignment.id);
     }
 
@@ -156,7 +156,7 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
             let file_data = base64_decode(&pf.file_data_base64)?;
             add_project_file(pool, new_pid, &pf.original_name, &pf.stored_name, &file_data, &pf.mime_type)
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|_| "Erro ao importar arquivo de projeto".to_string())?;
         }
     }
 
@@ -166,7 +166,7 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
             let file_data = base64_decode(&af.file_data_base64)?;
             add_assignment_file(pool, new_aid, &af.original_name, &af.stored_name, &file_data, &af.mime_type)
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|_| "Erro ao importar arquivo de atividade".to_string())?;
         }
     }
 
@@ -182,6 +182,14 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
     Ok(summary)
 }
 
+fn sanitize_project_name(name: &str) -> String {
+    name.chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' || c == ' ' { c } else { '_' })
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
 fn base64_encode(data: &[u8]) -> String {
     use base64::Engine;
     base64::engine::general_purpose::STANDARD.encode(data)
@@ -190,7 +198,7 @@ fn base64_encode(data: &[u8]) -> String {
 fn base64_decode(encoded: &str) -> Result<Vec<u8>, String> {
     use base64::Engine;
     base64::engine::general_purpose::STANDARD.decode(encoded)
-        .map_err(|e| format!("Erro ao decodificar base64: {}", e))
+        .map_err(|_| "Erro ao decodificar arquivo: formato inválido".to_string())
 }
 
 /// Inicializa a conexão com o banco PostgreSQL
@@ -588,7 +596,7 @@ pub async fn export_project_zip(pool: &PgPool, project_id: i32) -> Result<(Proje
     .bind(project_id)
     .fetch_optional(pool)
     .await
-    .map_err(|e| format!("Erro ao buscar projeto: {}", e))?
+    .map_err(|_| "Erro ao buscar projeto".to_string())?
     .ok_or_else(|| "Projeto não encontrado".to_string())?;
 
     // Buscar artigos do projeto
@@ -598,7 +606,7 @@ pub async fn export_project_zip(pool: &PgPool, project_id: i32) -> Result<(Proje
     .bind(project_id)
     .fetch_all(pool)
     .await
-    .map_err(|e| format!("Erro ao buscar artigos: {}", e))?;
+    .map_err(|_| "Erro ao buscar artigos".to_string())?;
 
     // Buscar arquivos do projeto (com dados)
     let files: Vec<(String, String, Vec<u8>)> = sqlx::query_as(
@@ -607,7 +615,7 @@ pub async fn export_project_zip(pool: &PgPool, project_id: i32) -> Result<(Proje
     .bind(project_id)
     .fetch_all(pool)
     .await
-    .map_err(|e| format!("Erro ao buscar arquivos: {}", e))?;
+    .map_err(|_| "Erro ao buscar arquivos".to_string())?;
 
     // Criar ZIP em memória
     let buffer = std::io::Cursor::new(Vec::new());
@@ -615,19 +623,20 @@ pub async fn export_project_zip(pool: &PgPool, project_id: i32) -> Result<(Proje
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
 
-    // 1. Adicionar arquivo de informações do projeto
+    // 1. Adicionar arquivo de informações do projeto (nome sanitizado)
+    let safe_project_name = sanitize_project_name(&project.name);
     let info_content = format!(
         "Projeto: {}\n\nDescrição: {}\n\nData de Criação: {}\n\n--- Artigos ({}) ---\n",
-        project.name,
+        safe_project_name,
         project.description.as_deref().unwrap_or("Sem descrição"),
         project.created_at,
         articles.len()
     );
 
     zip.start_file("projeto.txt", options)
-        .map_err(|e| format!("Erro ao criar ZIP: {}", e))?;
+        .map_err(|_| "Erro ao criar ZIP".to_string())?;
     zip.write_all(info_content.as_bytes())
-        .map_err(|e| format!("Erro ao escrever ZIP: {}", e))?;
+        .map_err(|_| "Erro ao escrever arquivo no ZIP".to_string())?;
 
     // 2. Adicionar artigos como arquivos .txt
     for (i, (title, content)) in articles.iter().enumerate() {
@@ -636,24 +645,25 @@ pub async fn export_project_zip(pool: &PgPool, project_id: i32) -> Result<(Proje
         let content = content.as_deref().unwrap_or("Sem conteúdo");
 
         zip.start_file(&filename, options)
-            .map_err(|e| format!("Erro ao criar ZIP: {}", e))?;
+            .map_err(|_| "Erro ao criar arquivo no ZIP".to_string())?;
         zip.write_all(content.as_bytes())
-            .map_err(|e| format!("Erro ao escrever ZIP: {}", e))?;
+            .map_err(|_| "Erro ao escrever conteúdo no ZIP".to_string())?;
     }
 
-    // 3. Adicionar arquivos anexados
+    // 3. Adicionar arquivos anexados (com nome sanitizado)
     for (original_name, _, file_data) in &files {
-        let filename = format!("arquivos/{}", original_name);
+        let safe_name = sanitize_filename(original_name);
+        let filename = format!("arquivos/{}", safe_name);
 
         zip.start_file(&filename, options)
-            .map_err(|e| format!("Erro ao criar ZIP: {}", e))?;
+            .map_err(|_| "Erro ao criar arquivo no ZIP".to_string())?;
         zip.write_all(file_data)
-            .map_err(|e| format!("Erro ao escrever ZIP: {}", e))?;
+            .map_err(|_| "Erro ao escrever arquivo no ZIP".to_string())?;
     }
 
     // Finalizar ZIP
     let finished = zip.finish()
-        .map_err(|e| format!("Erro ao finalizar ZIP: {}", e))?;
+        .map_err(|_| "Erro ao finalizar ZIP".to_string())?;
 
     Ok((project, finished.into_inner()))
 }
@@ -1104,18 +1114,34 @@ mod tests {
     }
 }
 
+/// Sanitiza nome de arquivo para evitar path traversal (Zip Slip, etc.)
+/// Remove qualquer tentativa de ../, ~, /, \0
 fn sanitize_filename(name: &str) -> String {
-    name.chars()
-        .map(|c| {
-            if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' || c == ' ' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>()
-        .trim()
-        .to_string()
+    // Usa apenas o nome do arquivo final (descarta caminhos)
+    let basename = std::path::Path::new(name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+
+    // Loop para remover ".." de forma segura (evita bypass "...." → "..")
+    let mut safe = basename.to_string();
+    while safe.contains("..") {
+        safe = safe.replace("..", "");
+    }
+
+    // Remover caracteres perigosos
+    safe = safe.replace('/', "_").replace('\\', "_").replace('~', "_");
+
+    // Remover caracteres de controle e não-imprimíveis
+    let clean: String = safe
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '_' || *c == '.' || *c == ' ')
+        .collect();
+
+    // Limitar tamanho máximo
+    let truncated: String = clean.chars().take(200).collect();
+    let trimmed = truncated.trim().to_string();
+    if trimmed.is_empty() { "arquivo_sem_nome".to_string() } else { trimmed }
 }
 
 /// Obter atividades que vencem hoje para notificações

@@ -1,1 +1,42 @@
-node_modules
+# === Segurança ===
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.cert
+
+# === Dependências ===
+node_modules/
+.pnp
+.pnp.js
+
+# === Build ===
+dist/
+build/
+src-tauri/target/
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.log
+/tmp/
+
+# === IDE ===
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# === Rust ===
+**/*.rs.bk
+
+# === Test ===
+coverage/
+.nyc_output/
+
+# === Tauri específico ===
+src-tauri/gen/

@@ -32,7 +32,7 @@ interface UpdateInfo {
 
 // URL do manifesto de atualização (configurável)
 const UPDATE_MANIFEST_URL = localStorage.getItem("unitesk_update_url") ||
-  "https://api.github.com/repos/Vitoriodev/unitesk/releases/latest";
+  "https://api.github.com/repos/Vitoriodev/UniTesk/releases/latest";
 
 const CURRENT_VERSION = "1.1.0";
 

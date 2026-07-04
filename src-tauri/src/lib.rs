@@ -15,14 +15,14 @@ struct AppState {
 
 #[tauri::command]
 async fn get_projects(state: tauri::State<'_, AppState>) -> Result<Vec<Project>, String> {
-    db::get_projects(&state.pool).await.map_err(|e| e.to_string())
+    db::get_projects(&state.pool).await.map_err(|_| "Erro ao carregar projetos".to_string())
 }
 
 #[tauri::command]
 async fn delete_project(state: tauri::State<'_, AppState>, id: i32) -> Result<(), String> {
     db::delete_project(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao excluir projeto".to_string())
 }
 
 #[tauri::command]
@@ -34,7 +34,7 @@ async fn update_project(
 ) -> Result<Project, String> {
     db::update_project(&state.pool, id, &name, &description.unwrap_or_default())
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao atualizar projeto".to_string())
 }
 
 #[tauri::command]
@@ -45,12 +45,12 @@ async fn create_project(
 ) -> Result<Project, String> {
     db::create_project(&state.pool, &name, &description.unwrap_or_default())
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao criar projeto".to_string())
 }
 
 #[tauri::command]
 async fn get_articles(state: tauri::State<'_, AppState>) -> Result<Vec<Article>, String> {
-    db::get_articles(&state.pool).await.map_err(|e| e.to_string())
+    db::get_articles(&state.pool).await.map_err(|_| "Erro ao carregar artigos".to_string())
 }
 
 #[tauri::command]
@@ -69,19 +69,19 @@ async fn create_article(
         project_id,
     )
     .await
-    .map_err(|e| e.to_string())
+    .map_err(|_| "Erro ao criar artigo".to_string())
 }
 
 #[tauri::command]
 async fn delete_article(state: tauri::State<'_, AppState>, id: i32) -> Result<(), String> {
     db::delete_article(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao excluir artigo".to_string())
 }
 
 #[tauri::command]
 async fn get_assignments(state: tauri::State<'_, AppState>) -> Result<Vec<Assignment>, String> {
-    db::get_assignments(&state.pool).await.map_err(|e| e.to_string())
+    db::get_assignments(&state.pool).await.map_err(|_| "Erro ao carregar atividades".to_string())
 }
 
 #[tauri::command]
@@ -102,7 +102,7 @@ async fn create_assignment(
         &project_name.unwrap_or_default(),
     )
     .await
-    .map_err(|e| e.to_string())
+    .map_err(|_| "Erro ao criar atividade".to_string())
 }
 
 #[tauri::command]
@@ -112,7 +112,7 @@ async fn mark_assignment_done(
 ) -> Result<(), String> {
     db::mark_assignment_done(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao marcar atividade como concluída".to_string())
 }
 
 #[tauri::command]
@@ -122,7 +122,7 @@ async fn get_project_files(
 ) -> Result<Vec<ProjectFile>, String> {
     db::get_project_files(&state.pool, project_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao carregar arquivos".to_string())
 }
 
 #[tauri::command]
@@ -133,6 +133,12 @@ async fn add_project_file(
     file_data: Vec<u8>,
     mime_type: String,
 ) -> Result<ProjectFile, String> {
+    // Validação de segurança: limite de 10 MB no backend também
+    const MAX_FILE_SIZE: usize = 10 * 1024 * 1024;
+    if file_data.len() > MAX_FILE_SIZE {
+        return Err(format!("Arquivo muito grande! Máximo permitido: 10 MB (tamanho enviado: {} MB)", file_data.len() / (1024 * 1024)));
+    }
+
     let stored_name = format!("{}_{}", uuid::Uuid::new_v4(), &original_name);
     db::add_project_file(
         &state.pool,
@@ -143,7 +149,7 @@ async fn add_project_file(
         &mime_type,
     )
     .await
-    .map_err(|e| e.to_string())
+    .map_err(|_| "Erro ao anexar arquivo".to_string())
 }
 
 #[tauri::command]
@@ -153,7 +159,7 @@ async fn get_project_file_data(
 ) -> Result<(String, String, Vec<u8>), String> {
     db::get_project_file_data(&state.pool, file_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao baixar arquivo".to_string())
 }
 
 #[tauri::command]
@@ -163,7 +169,7 @@ async fn delete_project_file(
 ) -> Result<(), String> {
     db::delete_project_file(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao excluir arquivo".to_string())
 }
 
 #[tauri::command]
@@ -172,7 +178,12 @@ async fn export_project_zip(
     project_id: i32,
 ) -> Result<(String, Vec<u8>), String> {
     let (project, zip_data) = db::export_project_zip(&state.pool, project_id).await?;
-    Ok((format!("{}.zip", project.name.replace(' ', "_")), zip_data))
+    // Nome sanitizado para download
+    let safe_name: String = project.name.chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' })
+        .collect();
+    let filename = format!("{}.zip", safe_name.trim());
+    Ok((filename, zip_data))
 }
 
 #[tauri::command]
@@ -181,7 +192,7 @@ async fn get_dashboard_stats(
 ) -> Result<DashboardStats, String> {
     db::get_dashboard_stats(&state.pool)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao carregar estatísticas".to_string())
 }
 
 // ===================== Arquivos de Atividades =====================
@@ -193,7 +204,7 @@ async fn get_assignment_files(
 ) -> Result<Vec<AssignmentFile>, String> {
     db::get_assignment_files(&state.pool, assignment_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao carregar arquivos da atividade".to_string())
 }
 
 #[tauri::command]
@@ -204,6 +215,12 @@ async fn add_assignment_file(
     file_data: Vec<u8>,
     mime_type: String,
 ) -> Result<AssignmentFile, String> {
+    // Validação de segurança: limite de 10 MB no backend também
+    const MAX_FILE_SIZE: usize = 10 * 1024 * 1024;
+    if file_data.len() > MAX_FILE_SIZE {
+        return Err(format!("Arquivo muito grande! Máximo permitido: 10 MB (tamanho enviado: {} MB)", file_data.len() / (1024 * 1024)));
+    }
+
     let stored_name = format!("{}_{}", uuid::Uuid::new_v4(), &original_name);
     db::add_assignment_file(
         &state.pool,
@@ -214,7 +231,7 @@ async fn add_assignment_file(
         &mime_type,
     )
     .await
-    .map_err(|e| e.to_string())
+    .map_err(|_| "Erro ao anexar arquivo à atividade".to_string())
 }
 
 #[tauri::command]
@@ -224,7 +241,7 @@ async fn get_assignment_file_data(
 ) -> Result<(String, String, Vec<u8>), String> {
     db::get_assignment_file_data(&state.pool, file_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao baixar arquivo da atividade".to_string())
 }
 
 #[tauri::command]
@@ -234,7 +251,7 @@ async fn delete_assignment_file(
 ) -> Result<(), String> {
     db::delete_assignment_file(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao excluir arquivo da atividade".to_string())
 }
 
 /// Verificar atividades com prazo hoje e disparar notificação
@@ -245,7 +262,7 @@ async fn delete_assignment(
 ) -> Result<(), String> {
     db::delete_assignment(&state.pool, id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Erro ao excluir atividade".to_string())
 }
 
 #[tauri::command]
@@ -270,7 +287,7 @@ async fn check_today_assignments(
 ) -> Result<Vec<Assignment>, String> {
     let assignments = db::get_today_assignments(&state.pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|_| "Erro ao verificar prazos".to_string())?;
 
     // Disparar notificação para cada atividade
     for assignment in &assignments {
