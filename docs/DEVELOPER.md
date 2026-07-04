@@ -8,22 +8,24 @@
 ## 📋 Sumário
 
 1. [Visão Geral](#-visão-geral)
-2. [Stack Tecnológica](#-stack-tecnológica)
-3. [Estrutura do Projeto](#-estrutura-do-projeto)
-4. [Arquitetura](#-arquitetura)
-5. [Banco de Dados](#-banco-de-dados)
-6. [Backend Rust/Tauri](#-backend-rusttauri)
-7. [Frontend React](#-frontend-react)
-8. [Sistema de Notificações](#-sistema-de-notificações)
-9. [Gerenciamento de Arquivos](#-gerenciamento-de-arquivos)
-10. [Sistema de Calendário](#-sistema-de-calendário)
-11. [Fallback localStorage](#-fallback-localstorage)
-12. [Testes](#-testes)
-13. [Instalação e Build](#-instalação-e-build)
-14. [Scripts de Instalação](#-scripts-de-instalação)
-15. [Como Adicionar uma Nova Funcionalidade](#-como-adicionar-uma-nova-funcionalidade)
-16. [Padrões de Código](#-padrões-de-código)
-17. [Troubleshooting](#-troubleshooting)
+2. [Repositório Oficial](#-repositório-oficial)
+3. [Stack Tecnológica](#-stack-tecnológica)
+4. [Estrutura do Projeto](#-estrutura-do-projeto)
+5. [Arquitetura](#-arquitetura)
+6. [Banco de Dados](#-banco-de-dados)
+7. [Backend Rust/Tauri](#-backend-rusttauri)
+8. [Frontend React](#-frontend-react)
+9. [Sistema de Notificações](#-sistema-de-notificações)
+10. [Gerenciamento de Arquivos](#-gerenciamento-de-arquivos)
+11. [Sistema de Calendário](#-sistema-de-calendário)
+12. [Fallback localStorage](#-fallback-localstorage)
+13. [Testes](#-testes)
+14. [Instalação e Build](#-instalação-e-build)
+15. [Scripts de Instalação](#-scripts-de-instalação)
+16. [Git Workflow](#-git-workflow)
+17. [Como Adicionar uma Nova Funcionalidade](#-como-adicionar-uma-nova-funcionalidade)
+18. [Padrões de Código](#-padrões-de-código)
+19. [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -51,6 +53,37 @@ em uma interface amigável, com calendário interativo e notificações nativas.
 | **Exportar/Importar Backup** | `Dashboard.tsx` | `export_all_data` / `import_all_data` |
 | **Tema Dracula** | `App.tsx` + `global.css` | data-theme="dracula" |
 | **Notificações nativas** | Automático (setInterval 60s) | `check_today_assignments` |
+
+---
+
+---
+
+## 🌐 Repositório Oficial
+
+> **URL do repositório:** [https://github.com/Vitoriodev/UniTesk](https://github.com/Vitoriodev/UniTesk)
+
+Sempre use este link para clonar, fazer push e colaborar no projeto.
+
+### Comandos Git Rápidos
+
+```bash
+# Clonar o projeto
+git clone https://github.com/Vitoriodev/UniTesk.git
+
+# Verificar remote configurado
+git remote -v
+# → origin  https://github.com/Vitoriodev/UniTesk.git (fetch)
+# → origin  https://github.com/Vitoriodev/UniTesk.git (push)
+
+# Commitar e enviar alterações
+git add -A
+git commit -m "mensagem descritiva"
+git push origin main
+```
+
+> ⚠️ **Importante:** O remote `origin` já está configurado para o URL correto.
+> Não altere para outro repositório. Consulte esta seção sempre que precisar
+> confirmar o endereço antes de um `git push`.
 
 ---
 
@@ -752,6 +785,9 @@ export DATABASE_URL="postgres://postgres:postgres@localhost:5432/academic_manage
 # 2. Build Tauri (compila frontend + Rust + gera .deb)
 npm run tauri build
 
+# Para build mais rápido (sem gerar .deb):
+npx tauri build --no-bundle
+
 # 3. Executar
 ./unitesk.sh
 ```
@@ -770,6 +806,53 @@ npm run tauri build
 
 ---
 
+## 🗄️ Git Workflow
+
+### Repositório
+
+- **URL oficial:** [https://github.com/Vitoriodev/UniTesk](https://github.com/Vitoriodev/UniTesk)
+- **Branch principal:** `main`
+
+### Fluxo de Commits
+
+```bash
+# 1. Verificar o estado
+git status
+
+# 2. Adicionar arquivos modificados
+git add -A
+
+# 3. Commitar com mensagem descritiva
+git commit -m "tipo: descrição clara do que foi feito"
+
+# 4. Enviar para o repositório
+git push origin main
+```
+
+### Convenção de Mensagens de Commit
+
+| Tipo | Quando usar | Exemplo |
+|---|---|---|
+| `feat` | Nova funcionalidade | `feat: adiciona suporte a scheduled_date nos artigos` |
+| `fix` | Correção de bug | `fix: corrige hitbox do botão de tema` |
+| `ui` | Melhoria de interface | `ui: melhora design do dashboard` |
+| `docs` | Documentação | `docs: atualiza DEVELOPER.md com link do repositório` |
+| `perf` | Otimização | `perf: acelera instalação com npm ci` |
+| `refactor` | Refatoração | `refactor: extrai lógica de notificações` |
+
+### Antes de um Push
+
+Sempre verifique:
+
+1. **TypeScript:** `npx tsc --noEmit` → 0 erros
+2. **Testes:** `npx vitest run` → todos passando
+3. **Remote:** `git remote -v` → aponta para `https://github.com/Vitoriodev/UniTesk.git`
+
+> ⚠️ **Nunca** faça push para um repositório diferente do oficial.
+> Confirme a URL do remote antes de cada push consultando esta seção.
+
+---
+
 ## 📜 Scripts de Instalação
 
 ### Hierarquia dos instaladores
@@ -779,19 +862,17 @@ unitesk-setup (binário C compilado - 17KB)
     │
     │ fork() + setsid() + execl()
     ▼
-setup.sh (assistente GUI com Zenity)
+setup.sh (assistente GUI com Zenity) / install.sh (terminal)
     │
     ├── Verifica pré-requisitos (Node, Rust, PostgreSQL)
     ├── Instala dependências de sistema (apt-get)
-    ├── npm install
+    ├── npm ci (package-lock) ou npm install — flags --no-fund --no-audit ⚡
     ├── Configura PostgreSQL (cria banco)
     ├── Cria .env com DATABASE_URL
-    ├── npm run build (frontend)
-    ├── npx tauri build (backend + empacotamento)
+    ├── npx tauri build --no-bundle (frontend + backend em 1 passo) ⚡
     ├── Cria unitesk.sh (wrapper)
     └── Cria .desktop (atalho no menu)
-    
-install.sh (versão terminal direta - mesmo fluxo, sem Zenity)
+
 uninstall.sh (remove tudo: banco, build, atalhos)
 build-deb.sh (gera pacote .deb para distribuição)
 ```
@@ -803,6 +884,24 @@ build-deb.sh (gera pacote .deb para distribuição)
 - Função: Encontra `setup.sh` no mesmo diretório e executa em background
 - Usa `fork()` + `setsid()` para desassociar do terminal
 - Log em `/tmp/unitesk_setup.log`
+
+### Otimizações de Performance (v1.2.0)
+
+Os scripts de instalação foram otimizados para reduzir o tempo total:
+
+1. **`npm ci` no lugar de `npm install`** — Quando `package-lock.json` existe, `npm ci`
+   é 2-5x mais rápido por ser determinístico (não resolve versões, só instala o lock).
+   Flags `--no-fund --no-audit` eliminam verificações desnecessárias.
+
+2. **Build duplicado eliminado** — O `tauri.conf.json` define `beforeBuildCommand: "npm run build"`,
+   então `npx tauri build` já compila o frontend automaticamente. Os scripts antes rodavam
+   `npm run build` separadamente, compilando o frontend **duas vezes**. Agora só compila uma.
+
+3. **`--no-bundle` no Tauri** — `npx tauri build --no-bundle` pula a geração do pacote `.deb`,
+   economizando minutos. O binário é gerado normalmente em `src-tauri/target/release/unitesk`.
+   Para distribuição, use `build-deb.sh` ou rode sem `--no-bundle`.
+
+**Ganho estimado:** 1-2 minutos em média numa instalação completa.
 
 ### unitesk.sh (Wrapper)
 
@@ -890,6 +989,17 @@ Adicione testes no arquivo `.test.tsx` correspondente.
 #### Etapa 7: Documentação
 
 Atualize este `DEVELOPER.md` e os docs relevantes.
+
+#### Etapa 8: Commit e Push
+
+```bash
+git add -A
+git commit -m "feat: adiciona campo prioridade nas atividades"
+git push origin main
+```
+
+> 📌 O remote `origin` já aponta para o repositório oficial:
+> `https://github.com/Vitoriodev/UniTesk.git`
 
 ---
 

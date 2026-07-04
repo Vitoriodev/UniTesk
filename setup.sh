@@ -283,13 +283,14 @@ Isso vai realizar os seguintes passos:\n\n
         echo "# 📦 Passo 3/7: Instalando dependências npm..."
         cd "$PROJECT_DIR"
         log "npm install..."
-        if [ -d "node_modules" ]; then
-            if ! npm install --silent 2>>"$LOG_FILE"; then
+        if [ -f "package-lock.json" ]; then
+            # npm ci é mais rápido e determinístico que npm install
+            if ! npm ci --no-fund --no-audit 2>>"$LOG_FILE"; then
                 install_ok=false
-                error_msg="Falha no npm install"
+                error_msg="Falha no npm ci"
             fi
         else
-            if ! npm install 2>>"$LOG_FILE"; then
+            if ! npm install --no-fund --no-audit 2>>"$LOG_FILE"; then
                 install_ok=false
                 error_msg="Falha no npm install"
             fi
@@ -328,20 +329,20 @@ Isso vai realizar os seguintes passos:\n\n
         fi
 
         # Passo 6: Compilar frontend
+        # ⚡ Otimizado: o frontend é compilado automaticamente pelo Tauri
+        # (via beforeBuildCommand no tauri.conf.json), então não precisamos
+        # buildar aqui separadamente — elimina uma compilação duplicada.
         echo "68"
-        echo "# 🏗️  Passo 6/7: Compilando frontend (Vite)..."
-        log "npm run build..."
-        if ! DATABASE_URL="$DATABASE_URL" npm run build 2>>"$LOG_FILE"; then
-            install_ok=false
-            error_msg="Falha ao compilar frontend"
-        fi
-        log "Frontend compilado"
+        echo "# 🏗️  Passo 6/7: Frontend será compilado junto com o Tauri..."
+        log "Frontend build integrado ao tauri build"
 
         # Passo 7: Compilar Tauri
         echo "78"
         echo "# 🏗️  Passo 7/7: Compilando aplicativo (pode levar minutos)..."
         log "npx tauri build..."
-        if ! DATABASE_URL="$DATABASE_URL" npx tauri build 2>>"$LOG_FILE"; then
+        # ⚡ Otimizado: --no-bundle pula a geração do pacote .deb,
+        # economizando minutos. O binário compilado continua sendo gerado.
+        if ! DATABASE_URL="$DATABASE_URL" npx tauri build --no-bundle 2>>"$LOG_FILE"; then
             install_ok=false
             error_msg="Falha ao compilar Tauri"
         fi

@@ -139,6 +139,8 @@ projetos/unitesk/
 ├── CHANGELOG.md              # Histórico de alterações
 └── docs/                    # Documentação completa
     ├── README.md            # Guia principal
+    ├── DEVELOPER.md       mentação completa
+    ├── README.md            # Guia principal
     ├── DEVELOPER.md         # Documentação para desenvolvedores
     ├── ARCHITECTURE.md      # Arquitetura do projeto
     ├── DATABASE.md          # Documentação do banco

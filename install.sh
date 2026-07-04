@@ -202,29 +202,17 @@ echo ""
 # ---------------------------------------
 # 6. Build do executável Tauri (otimizado)
 # ---------------------------------------
-echo -e "${YELLOW}[6/7] Compilando o executável...${NC}"
+echo -e "${YELLOW}[6/7] Compilando o aplicativo...${NC}"
 echo ""
 
 cd "$PROJECT_DIR"
 
-# Verificar se o frontend já foi compilado (build incremental)
-if [ -d "dist" ] && [ -f "dist/index.html" ]; then
-    echo "  • Build do frontend já existe. Recompilando apenas se necessário..."
-fi
-
-# Build do frontend - Vite é rápido em builds incrementais
-echo "  • Compilando frontend (Vite)..."
-if DATABASE_URL="$DATABASE_URL" npm run build 2>&1; then
-  echo -e "  • Frontend: ${GREEN}✓${NC}"
-else
-  echo -e "  • Frontend: ${RED}✗${NC} Erro na compilação. Verifique a saída acima."
-  exit 1
-fi
-
-# Build Tauri (usa cache incremental do Cargo)
-echo "  • Compilando aplicativo desktop (Tauri)..."
-echo "    (Usando cache incremental - mais rápido na segunda execução)"
-if DATABASE_URL="$DATABASE_URL" npx tauri build 2>&1; then
+# ⚡ Otimizado: o build do Tauri já compila o frontend automaticamente
+# (via beforeBuildCommand no tauri.conf.json). Elimina compilação duplicada.
+# --no-bundle pula a geração do pacote .deb, economizando minutos.
+echo "  • Compilando frontend + backend (Tauri)..."
+echo "    (O build do frontend é feito automaticamente pelo Tauri)"
+if DATABASE_URL="$DATABASE_URL" npx tauri build --no-bundle 2>&1; then
   echo -e "  • Tauri: ${GREEN}✓${NC}"
 else
   echo -e "  • Tauri: ${RED}✗${NC} Erro na compilação. Verifique a saída acima."

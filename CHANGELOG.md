@@ -34,8 +34,12 @@ Todas as alterações, correções e melhorias feitas no Unitesk.
 ### 🔧 Alterações de Configuração
 
 #### Instalação Otimizada
-- **npm ci** — Instalação mais rápida usando `npm ci` quando `package-lock.json` existe
+- **npm ci** — Instalação mais rápida usando `npm ci` quando `package-lock.json` existe (2-5x mais rápido)
 - **Flags de desempenho** — `--no-fund --no-audit` para acelerar instalação
+- **Build duplicado eliminado** — `setup.sh` e `install.sh` não rodam mais `npm run build` separadamente,
+  pois o `npx tauri build` já compila o frontend automaticamente (via `beforeBuildCommand`)
+- **`--no-bundle`** — Adicionado flag para pular geração do pacote `.deb` durante instalação local,
+  economizando minutos. O binário continua sendo gerado normalmente.
 - **Build incremental** — Melhor aproveitamento do cache do Cargo
 
 ---
