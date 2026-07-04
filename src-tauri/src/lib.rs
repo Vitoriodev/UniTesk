@@ -60,6 +60,7 @@ async fn create_article(
     content: Option<String>,
     project_name: Option<String>,
     project_id: Option<i32>,
+    scheduled_date: Option<String>,
 ) -> Result<Article, String> {
     db::create_article(
         &state.pool,
@@ -67,6 +68,7 @@ async fn create_article(
         &content.unwrap_or_default(),
         &project_name.unwrap_or_default(),
         project_id,
+        scheduled_date,
     )
     .await
     .map_err(|_| "Erro ao criar artigo".to_string())

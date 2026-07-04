@@ -16,6 +16,7 @@ pub struct Article {
     pub project_name: Option<String>,
     pub project_id: Option<i32>,
     pub created_at: String,
+    pub scheduled_date: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]

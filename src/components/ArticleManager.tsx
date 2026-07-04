@@ -132,6 +132,7 @@ function ArticleManager() {
         title: newArticle.title,
         content: newArticle.content,
         projectName: newArticle.project_name,
+        scheduledDate: newArticle.scheduled_date || null,
       });
       resetForm();
       loadArticles();

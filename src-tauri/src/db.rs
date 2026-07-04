@@ -119,12 +119,13 @@ pub async fn import_all_data(pool: &PgPool, data: &ExportedData) -> Result<Strin
     for article in &data.articles {
         let new_project_id = article.project_id.and_then(|pid| project_id_map.get(&pid).copied());
         sqlx::query(
-            "INSERT INTO articles (title, content, project_name, project_id) VALUES ($1, $2, $3, $4)"
+            "INSERT INTO articles (title, content, project_name, project_id, scheduled_date) VALUES ($1, $2, $3, $4, $5::date)"
         )
         .bind(&article.title)
         .bind(&article.content)
         .bind(&article.project_name)
         .bind(new_project_id)
+        .bind(&article.scheduled_date)
         .execute(pool)
         .await
         .map_err(|_| "Erro ao importar artigo".to_string())?;
@@ -267,6 +268,13 @@ pub async fn init_db(database_url: &str) -> Result<PgPool, sqlx::Error> {
     .execute(&pool)
     .await?;
 
+    // Migração: adicionar coluna scheduled_date nos artigos se não existir
+    sqlx::query(
+        "ALTER TABLE articles ADD COLUMN IF NOT EXISTS scheduled_date DATE"
+    )
+    .execute(&pool)
+    .await?;
+
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS project_files (
@@ -400,7 +408,7 @@ pub async fn delete_project_file(pool: &PgPool, id: i32) -> Result<(), sqlx::Err
 
 pub async fn get_articles(pool: &PgPool) -> Result<Vec<Article>, sqlx::Error> {
     sqlx::query_as::<_, Article>(
-        "SELECT id, title, content, project_name, project_id, created_at::text as created_at FROM articles ORDER BY created_at DESC"
+        "SELECT id, title, content, project_name, project_id, created_at::text as created_at, scheduled_date::text as scheduled_date FROM articles ORDER BY created_at DESC"
     )
     .fetch_all(pool)
     .await
@@ -412,14 +420,16 @@ pub async fn create_article(
     content: &str,
     project_name: &str,
     project_id: Option<i32>,
+    scheduled_date: Option<String>,
 ) -> Result<Article, sqlx::Error> {
     sqlx::query_as::<_, Article>(
-        "INSERT INTO articles (title, content, project_name, project_id) VALUES ($1, $2, $3, $4) RETURNING id, title, content, project_name, project_id, created_at::text as created_at"
+        "INSERT INTO articles (title, content, project_name, project_id, scheduled_date) VALUES ($1, $2, $3, $4, $5::date) RETURNING id, title, content, project_name, project_id, created_at::text as created_at, scheduled_date::text as scheduled_date"
     )
     .bind(title)
     .bind(content)
     .bind(project_name)
     .bind(project_id)
+    .bind(&scheduled_date)
     .fetch_one(pool)
     .await
 }
@@ -773,14 +783,14 @@ mod tests {
             .expect("Falha ao criar projeto");
 
         // Artigo com projeto vinculado
-        let article = create_article(&pool, "Artigo Teste", "Conteúdo do artigo", "Projeto Artigo", Some(project.id))
+        let article = create_article(&pool, "Artigo Teste", "Conteúdo do artigo", "Projeto Artigo", Some(project.id), None)
             .await
             .expect("Falha ao criar artigo");
         assert_eq!(article.title, "Artigo Teste");
         assert_eq!(article.project_id, Some(project.id));
 
         // Artigo sem projeto
-        let article2 = create_article(&pool, "Artigo Solto", "Conteúdo", "", None)
+        let article2 = create_article(&pool, "Artigo Solto", "Conteúdo", "", None, None)
             .await
             .expect("Falha ao criar artigo sem projeto");
         assert_eq!(article2.title, "Artigo Solto");
@@ -795,7 +805,7 @@ mod tests {
     async fn test_delete_article() {
         let pool = setup_test_db().await;
 
-        let article = create_article(&pool, "Artigo para Deletar", "", "", None)
+        let article = create_article(&pool, "Artigo para Deletar", "", "", None, None)
             .await
             .expect("Falha ao criar artigo");
 
@@ -1004,7 +1014,7 @@ mod tests {
         
         create_project(&pool, &format!("Proj_DB_{}", unique_suffix), "").await.unwrap();
         create_project(&pool, &format!("Proj_DB_{}_2", unique_suffix), "").await.unwrap();
-        create_article(&pool, &format!("Art_DB_{}", unique_suffix), "", "", None).await.unwrap();
+        create_article(&pool, &format!("Art_DB_{}", unique_suffix), "", "", None, None).await.unwrap();
 
         let stats = get_dashboard_stats(&pool)
             .await
@@ -1053,7 +1063,7 @@ mod tests {
 
         let project = create_project(&pool, "Projeto", "").await.unwrap();
         
-        let article = create_article(&pool, "Artigo Vinculado", "", "Projeto", Some(project.id))
+        let article = create_article(&pool, "Artigo Vinculado", "", "Projeto", Some(project.id), None)
             .await
             .unwrap();
         assert_eq!(article.project_id, Some(project.id));
