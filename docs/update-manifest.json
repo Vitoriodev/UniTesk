@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "download_url": "https://github.com/Vitoriodev/unitesk/releases/download/v1.1.0/Unitesk_1.1.0_amd64.deb",
+  "download_url": "https://github.com/Vitoriodev/UniTesk/releases/download/v1.1.0/Unitesk_1.1.0_amd64.deb",
   "release_notes": "## 🆕 Novidades da v1.1.0\n\n### ✅ Sistema de Status (Artigos)\n- Documentos agora possuem status **Rascunho** 📝 ou **Pronto** ✅\n- Filtros rápidos: Todos, Rascunhos e Prontos\n- Alternância de status com um clique\n\n### 📅 Navegação no Calendário\n- Dropdowns para selecionar mês e ano diretamente\n- Botão \"Hoje\" para navegação rápida\n- Prevenção de datas obsoletas\n\n### 📊 Dashboard Reformulado\n- Card de boas-vindas personalizado\n- Cards de estatísticas animados\n- Barra de progresso geral\n- Linha do tempo de atividades recentes\n\n### 🐛 Correções\n- Contador animado corrigido (agora compatível com testes)\n- Persistência de status em chave única do localStorage\n- Datas stale corrigidas no calendário\n- Cores hardcoded substituídas por variáveis CSS\n\n### 📥 Auto-Update\n- Sistema de verificação de atualizações integrado\n- Botão \"Verificar Atualizações\" no Dashboard\n- Download direto da nova versão",
   "created_at": "2026-07-04"
 }
