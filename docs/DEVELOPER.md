@@ -1270,5 +1270,5 @@ O Vite serve o arquivo de `public/` na raiz durante `npm run dev` e o copia para
 
 ---
 
-> **🎓 Unitesk v1.2** — Documentação gerada em Julho/2026  
+> **🎓 Unitesk v1.3** — Documentação gerada em Julho/2026  
 > Mantenha este documento atualizado conforme o código evolui!

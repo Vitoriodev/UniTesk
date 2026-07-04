@@ -73,7 +73,7 @@ function App() {
       <main className="app-main">{renderContent()}</main>
 
       <footer className="app-footer">
-        <p>Unitesk v1.1 — Mantenha seus projetos acadêmicos organizados</p>
+        <p>Unitesk v1.3 — Mantenha seus projetos acadêmicos organizados</p>
       </footer>
     </div>
   );

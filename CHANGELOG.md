@@ -4,6 +4,30 @@ Todas as alterações, correções e melhorias feitas no Unitesk.
 
 ---
 
+## [1.3.0] — Julho 2026 — LTS Release
+
+### 🎯 Melhorias de Qualidade (LTS)
+
+#### 🔧 Robustez do Dashboard
+- **AnimatedCounter protegido** — Componente agora trata valores `NaN`, `undefined` e negativos,
+  evitando warnings de renderização e TimeoutNaN nos testes
+
+#### 🐛 Correções
+- **Contraste no tema Dracula** — Selects e inputs de data/hora no calendário agora usam
+  `color-scheme: dark` para garantir legibilidade no tema escuro
+
+#### ⚡ Instalação Otimizada
+- **npm ci** — Instalação 2-5x mais rápida usando `npm ci` quando `package-lock.json` existe
+- **Build duplicado eliminado** — Frontend não é mais compilado duas vezes (removido `npm run build`
+  redundante antes do `npx tauri build`)
+- **`--no-bundle`** — Geração do pacote `.deb` pulada durante instalação local, economizando minutos
+
+### 📚 Documentação
+- `docs/DEVELOPER.md` — Atualizada com seção de otimizações de performance
+- `CHANGELOG.md` — Histórico completo de todas as alterações
+
+---
+
 ## [1.2.0] — Julho 2026
 
 ### 🆕 Novas Funcionalidades

@@ -29,21 +29,23 @@ function AnimatedCounter({ value, duration = 400 }: { value: number; duration?: 
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    if (value === 0) {
+    // Proteção contra valores inválidos (NaN, undefined, negativo)
+    const safeValue = typeof value === 'number' && isFinite(value) && value > 0 ? value : 0;
+    if (safeValue === 0) {
       setDisplayValue(0);
       return;
     }
-    const steps = Math.min(15, Math.max(1, value));
-    const increment = value / steps;
+    const steps = Math.min(15, Math.max(1, safeValue));
+    const increment = safeValue / steps;
     let current = 0;
     let step = 0;
 
     const interval = setInterval(() => {
       step++;
       current = Math.round(increment * step);
-      setDisplayValue(Math.min(current, value));
+      setDisplayValue(Math.min(current, safeValue));
       if (step >= steps) {
-        setDisplayValue(value);
+        setDisplayValue(safeValue);
         clearInterval(interval);
       }
     }, duration / steps);

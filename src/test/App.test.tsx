@@ -64,7 +64,7 @@ describe("App", () => {
 
   it("renders the footer", () => {
     render(<App />);
-    expect(screen.getByText(/Unitesk v1.1/)).toBeInTheDocument();
+    expect(screen.getByText(/Unitesk v1.3/)).toBeInTheDocument();
   });
 
   it("renders theme toggle button", () => {
