@@ -35,11 +35,6 @@
     ],
     "linux": {
       "deb": {
-        "scripts": {
-          "postinst": "deb-scripts/postinst",
-          "prerm": "deb-scripts/prerm",
-          "postrm": "deb-scripts/postrm"
-        },
         "depends": [
           "postgresql",
           "postgresql-client",
