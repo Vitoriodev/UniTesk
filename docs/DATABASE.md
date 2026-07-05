@@ -2,9 +2,18 @@
 
 ## 📋 Visão Geral
 
-O Unitesk utiliza **PostgreSQL** como banco de dados. O schema é
-gerenciado automaticamente pelo Rust na inicialização da aplicação
-(`db::init_db()`).
+O Unitesk possui **duas implementações de banco** de acordo com a plataforma:
+
+| Plataforma | Banco | Driver |
+|---|---|---|
+| **Linux** | PostgreSQL | `PgPool` (SQLx) |
+| **Windows** | SQLite (embutido) | `SqlitePool` (SQLx) |
+
+O schema é gerenciado automaticamente pelo Rust na inicialização da aplicação
+(`db::init_db()`), com `#[cfg(target_os)]` selecionando a implementação correta.
+
+**Interoperabilidade:** Dados podem ser transferidos entre plataformas via
+formato `.unitesk` (JSON com base64 para arquivos).
 
 ### Tabelas
 
@@ -14,6 +23,14 @@ gerenciado automaticamente pelo Rust na inicialização da aplicação
 | `articles`     | Artigos vinculados a projetos      |
 | `assignments`  | Atividades com prazo (calendário)  |
 | `project_files`| Arquivos anexados aos projetos     |
+| `assignment_files` | Arquivos anexados às atividades |
+| `clients`      | Clientes                          |
+| `users`        | Usuários                          |
+| `teams`        | Equipes                           |
+| `team_members` | Membros de equipe                 |
+| `time_entries` | Registros de horas                |
+| `invoices`     | Faturas                           |
+| `notifications`| Notificações                      |
 
 ## 🚀 Setup Inicial
 
@@ -113,17 +130,52 @@ CREATE INDEX idx_project_files_project_id ON project_files(project_id);
 
 ---
 
+## ⚠️ Diferenças PostgreSQL vs SQLite
+
+| PostgreSQL | SQLite |
+|---|---|
+| `CURRENT_DATE` | `date('now')` |
+| `CURRENT_TIME` | `time('now')` |
+| `CURRENT_TIMESTAMP` | `datetime('now')` |
+| `coluna::text` | `CAST(coluna AS TEXT)` |
+| `SERIAL PRIMARY KEY` | `INTEGER PRIMARY KEY AUTOINCREMENT` |
+| `BYTEA` | `BLOB` |
+| `BOOLEAN` | `INTEGER (0/1)` |
+| Bind: `$1`, `$2` | Bind: `?1`, `?2` |
+| `INTERVAL '30 seconds'` | Filtrar em Rust (não suportado) |
+| `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` | Schema fixo (criado no init) |
+
+---
+
 ## 🔄 Migrations
 
 As tabelas são criadas automaticamente na inicialização do app
 (`db::init_db()` em `src-tauri/src/db.rs`). Não é necessário rodar
 migrations manualmente.
 
-O arquivo `docs/setup.sql` contém o schema completo para setup manual.
+O arquivo `docs/setup.sql` contém o schema completo para setup manual no PostgreSQL.
 
 ---
 
 ## 🔍 Consultas Úteis
+
+### PostgreSQL (Linux)
+
+```sql
+-- Atividades que vencem hoje
+SELECT * FROM assignments
+WHERE due_date = CURRENT_DATE AND status = 'pending';
+```
+
+### SQLite (Windows)
+
+```sql
+-- Atividades que vencem hoje
+SELECT * FROM assignments
+WHERE due_date = date('now') AND status = 'pending';
+```
+
+### Comuns (ambos os bancos)
 
 ```sql
 -- Ver todas as atividades pendentes ordenadas por data

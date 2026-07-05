@@ -10,7 +10,7 @@
   <img alt="Versão" src="https://img.shields.io/badge/versão-1.3.0-purple?style=flat-square">
   <img alt="Frontend" src="https://img.shields.io/badge/frontend-React%20%7C%20TypeScript-61dafb?style=flat-square">
   <img alt="Backend" src="https://img.shields.io/badge/backend-Rust%20%7C%20Tauri%202-dea584?style=flat-square">
-  <img alt="Banco" src="https://img.shields.io/badge/banco-PostgreSQL-336791?style=flat-square">
+  <img alt="Banco" src="https://img.shields.io/badge/banco-PostgreSQL%20%7C%20SQLite-336791?style=flat-square">
 </p>
 
 **Organize seus projetos, artigos, atividades e prazos em um só lugar.**
@@ -114,7 +114,9 @@ O `.deb` será gerado em `src-tauri/target/release/bundle/deb/`.
 |--------|-----------|
 | 🎨 **Frontend** | React 18 + TypeScript + Vite 6 |
 | 🦀 **Backend** | Rust + Tauri 2 |
-| 🗄️ **Banco** | PostgreSQL + SQLx |
+| 🗄️ **Banco** | PostgreSQL (Linux) / SQLite (Windows) + SQLx |
+| 🌙 **Temas** | Claro + Dracula (escuro) |
+| 📊 **Gráficos** | Recharts 3.x |
 | 📦 **Pacote** | .deb (dpkg/apt) |
 
 ---

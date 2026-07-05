@@ -2,13 +2,13 @@ mod db;
 mod models;
 
 use models::*;
-use sqlx::PgPool;
+use db::DbPool;
 use tauri::Manager;
 use tauri_plugin_notification::NotificationExt;
 
 /// Estado compartilhado da aplicação
 struct AppState {
-    pool: PgPool,
+    pool: DbPool,
 }
 
 // ===================== Comandos Tauri =====================
@@ -748,6 +748,32 @@ async fn get_report_stats(
         .map_err(|_| "Erro ao carregar relatórios".to_string())
 }
 
+// ===================== Helpers =====================
+
+/// Obtém a URL do banco PostgreSQL no Linux
+#[cfg(target_os = "linux")]
+fn get_database_url_linux() -> String {
+    std::env::var("DATABASE_URL").or_else(|_| {
+        let config_path = std::path::Path::new("/etc/unitesk/unitesk.conf");
+        if config_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(config_path) {
+                for line in content.lines() {
+                    if let Some(value) = line.strip_prefix("DATABASE_URL=\"") {
+                        if let Some(end) = value.find('"') {
+                            return Ok(value[..end].to_string());
+                        }
+                    } else if let Some(value) = line.strip_prefix("DATABASE_URL=") {
+                        return Ok(value.to_string());
+                    }
+                }
+            }
+        }
+        Err(std::env::VarError::NotPresent)
+    }).unwrap_or_else(|_| {
+        "postgres://postgres@localhost:5432/unitesk".to_string()
+    })
+}
+
 // ===================== Configuração do App =====================
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -755,35 +781,25 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            let database_url = std::env::var("DATABASE_URL").or_else(|_| {
-                let config_path = std::path::Path::new("/etc/unitesk/unitesk.conf");
-                if config_path.exists() {
-                    if let Ok(content) = std::fs::read_to_string(config_path) {
-                        for line in content.lines() {
-                            if let Some(value) = line.strip_prefix("DATABASE_URL=\"") {
-                                if let Some(end) = value.find('"') {
-                                    return Ok(value[..end].to_string());
-                                }
-                            } else if let Some(value) = line.strip_prefix("DATABASE_URL=") {
-                                return Ok(value.to_string());
-                            }
-                        }
-                    }
-                }
-                Err(std::env::VarError::NotPresent)
-            }).unwrap_or_else(|_| {
-                "postgres://postgres@localhost:5432/unitesk".to_string()
-            });
+            // Determinar URL/conexão do banco conforme a plataforma
+            #[cfg(target_os = "linux")]
+            let database_url = get_database_url_linux();
+
+            #[cfg(target_os = "windows")]
+            let database_url = "unitesk.db".to_string();
 
             let pool = tauri::async_runtime::block_on(async {
                 match db::init_db(&database_url).await {
                     Ok(pool) => {
                         println!("✅ Banco de dados conectado com sucesso!");
-                        let pool_clone = pool.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = db::update_overdue_assignments(&pool_clone).await;
-                            println!("✅ Status de atividades atualizado!");
-                        });
+                        #[cfg(target_os = "linux")]
+                        {
+                            let pool_clone = pool.clone();
+                            tauri::async_runtime::spawn(async move {
+                                let _ = db::update_overdue_assignments(&pool_clone).await;
+                                println!("✅ Status de atividades atualizado!");
+                            });
+                        }
                         Some(pool)
                     }
                     Err(e) => {

@@ -51,7 +51,10 @@ em uma interface amigável, com calendário interativo e notificações nativas.
 | **Exportar ZIP** | `ProjectList.tsx` | `export_project_zip` |
 | **Excluir Atividades** | `CalendarView.tsx` | `delete_assignment` |
 | **Exportar/Importar Backup** | `Dashboard.tsx` | `export_all_data` / `import_all_data` |
+| **Painel de Notificações** | `NotificationPanel.tsx` | `get_notifications`, `mark_read`, etc. |
 | **Tema Dracula** | `App.tsx` + `global.css` | data-theme="dracula" |
+| **Tema claro otimizado** | `global.css` | `--border: #cbd5e1`, `--bg: #f1f5f9` |
+| **Formulários no Dracula** | `global.css` | `color-scheme: dark` nos `<select>` |
 | **Notificações nativas** | Automático (setInterval 60s) | `check_today_assignments` |
 
 ---
@@ -94,12 +97,17 @@ git push origin main
 | **Frontend** | React + TypeScript | 18.x / 5.x |
 | **Build Frontend** | Vite | 6.x |
 | **Backend Desktop** | Rust + Tauri | 2.x |
-| **Banco de Dados** | PostgreSQL + SQLx | 14+ / 0.8 |
+| **Banco (Linux)** | PostgreSQL + SQLx | 14+ / 0.8 |
+| **Banco (Windows)** | SQLite + SQLx (embutido) | 0.8 |
 | **Comunicação** | Tauri IPC (invoke) | — |
 | **Notificações Nativas** | tauri-plugin-notification | 2.x |
 | **Serialização** | serde + serde_json | 1.x |
 | **UUID** | uuid (v4) | 1.x |
 | **ZIP** | zip crate | 2.x |
+| **Base64** | base64 crate | 0.22 |
+| **Chrono** | chrono | 0.4 |
+| **Gráficos** | Recharts | 3.x |
+| **Calendário** | react-calendar | 5.x |
 | **Testes Frontend** | Vitest + Testing Library | 4.x / 16.x |
 
 ### Dependências de Sistema (Linux)
@@ -114,6 +122,13 @@ sudo apt-get install -y \
   libssl-dev \
   postgresql postgresql-client
 ```
+
+### Dependências de Sistema (Windows)
+
+- WebView2 (já incluso no Windows 10/11)
+- Microsoft Visual Studio Build Tools (C++)
+- Rust via rustup-init.exe
+- SQLite é embutido (não requer instalação separada)
 
 ---
 
@@ -185,7 +200,7 @@ unitesk/
 ### Fluxo de Dados
 
 ```
-┌─────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────┐
 │                    React (Frontend)                       │
 │                                                          │
 │  Componente → invoke("comando", { args }) → Tauri IPC   │
@@ -194,8 +209,12 @@ unitesk/
 │                                              ↓          │
 │                                          SQLx queries    │
 │                                              ↓          │
-│                                       PostgreSQL DB      │
-└─────────────────────────────────────────────────────────┘
+│   ┌──────────────────────────────────────────────┐      │
+│   │ #[cfg(target_os)]                            │      │
+│   │ Linux  → PostgreSQL (PgPool, $1 binds)       │      │
+│   │ Windows → SQLite (SqlitePool, ?1 binds)      │      │
+│   └──────────────────────────────────────────────┘      │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ### Comunicação Frontend ↔ Backend
@@ -325,38 +344,56 @@ pub struct Assignment {
 **`DashboardStats`** usa `#[serde(rename = "camelCase")]` para expor campos  
 em camelCase para o frontend JavaScript.
 
-### db.rs — Operações de banco
+### db.rs — Operações de banco (dupla plataforma)
+
+O arquivo `db.rs` (~1800 linhas) contém **duas implementações completas** para cada função,  
+selecionadas por `#[cfg(target_os = "linux")]` ou `#[cfg(target_os = "windows")]`.
 
 Organizado por seção de comentário:
 
-- `init_db()` — Conexão + criação de tabelas + migrações
+- `DbPool` — Type alias resolvido por plataforma
+- `init_db()` — Conexão + criação de tabelas + migrações (PostgreSQL + SQLite)
 - `// === Projetos ===` — CRUD de projetos
 - `// === Arquivos de Projeto ===` — CRUD de arquivos
 - `// === Artigos ===` — CRUD de artigos
 - `// === Atividades (Assignments) ===` — CRUD de atividades + update_overdue
 - `// === Arquivos de Atividades ===` — CRUD de arquivos de atividade
+- `// === Clientes ===` — CRUD de clientes
+- `// === Usuários ===` — CRUD de usuários
+- `// === Equipes ===` — CRUD de equipes
+- `// === Membros da Equipe ===` — CRUD de membros
+- `// === Registro de Horas ===` — Timer + entradas manuais
+- `// === Faturas / Financeiro ===` — CRUD de faturas
+- `// === Notificações ===` — CRUD + geração automática
 - `// === Dashboard ===` — Estatísticas agregadas
 - `// === Exportação ZIP ===` — Geração de ZIP
-- `get_today_assignments()` — Busca atividades para notificação
+- `// === Relatórios ===` — Dados para gráficos
 
 **Padrão de queries SQL:**
 
 ```rust
-// INSERT com RETURNING (devolve o registro criado)
-sqlx::query_as::<_, Assignment>("INSERT INTO assignments (...) VALUES ($1, $2) RETURNING id, ...")
-    .bind(valor)
-    .fetch_one(pool)
-    .await
+// Linux (PostgreSQL) — bind $1, $2...
+sqlx::query_as::<_, Assignment>(
+    "INSERT INTO assignments (...) VALUES ($1, $2) RETURNING id, ..."
+)
+.bind(valor).bind(valor2)
+.fetch_one(pool).await
 
-// SELECT com filtro
-sqlx::query_as::<_, Assignment>("SELECT ... WHERE id = $1")
-    .bind(id)
-    .fetch_optional(pool)  // ou .fetch_all(pool)
-    .await
+// Windows (SQLite) — bind ?1, ?2...
+sqlx::query_as::<_, Assignment>(
+    "INSERT INTO assignments (...) VALUES (?1, ?2) RETURNING id, ..."
+)
+.bind(valor).bind(valor2)
+.fetch_one(pool).await
 
-// Cast de tipos: use ::text para converter DATE/TIME/TIMESTAMP para string
-"SELECT due_date::text as due_date, due_time::text as due_time FROM assignments"
+// Datas no PostgreSQL: CURRENT_DATE, ::text
+// Datas no SQLite: date('now'), CAST ... AS TEXT
 ```
+
+**Migrations automáticas:**
+- PostgreSQL: `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+- SQLite: `CREATE TABLE IF NOT EXISTS` (sem `ADD COLUMN IF NOT EXISTS` — schema fixo)
+- SQLite: `PRAGMA foreign_keys = ON` na inicialização
 
 ### lib.rs — Comandos Tauri
 
@@ -374,15 +411,37 @@ async fn nome_do_comando(
 }
 ```
 
-**Registro de comandos:** Todos os comandos devem ser listados em `.invoke_handler(tauri::generate_handler![...])`.
+**Registro de comandos:** ~50 comandos registrados em `.invoke_handler(tauri::generate_handler![...])`.
 
-**AppState:** Estado compartilhado contendo o `PgPool`.
+**DbPool:** O tipo do pool é resolvido por plataforma:
 
-**Inicialização:** Em `run()` → `setup()`:
-1. Lê `DATABASE_URL` da env var (fallback: `postgres://postgres@localhost:5432/unitesk`)
-2. Conecta ao PostgreSQL via `db::init_db()`
-3. Gerencia o `AppState` com o pool
-4. Dispara `update_overdue_assignments` em background (spawn)
+```rust
+// db.rs
+#[cfg(target_os = "linux")]
+pub type DbPool = sqlx::PgPool;
+
+#[cfg(target_os = "windows")]
+pub type DbPool = sqlx::SqlitePool;
+```
+
+```rust
+// lib.rs — AppState usa DbPool (genérico)
+use db::DbPool;
+
+struct AppState {
+    pool: DbPool,
+}
+```
+
+**Inicialização (Linux):**
+1. `get_database_url_linux()` — lê `DATABASE_URL` da env var → `/etc/unitesk/unitesk.conf` → fallback `postgres://postgres@localhost:5432/unitesk`
+2. `db::init_db()` com `PgPoolOptions` (max 5 conexões)
+3. Background: `update_overdue_assignments` via `spawn`
+
+**Inicialização (Windows):**
+1. Conecta ao SQLite: `db::init_db("unitesk.db")` com `SqlitePoolOptions` (max 1 conexão)
+2. Ativa `PRAGMA foreign_keys = ON`
+3. SQLite é embutido — arquivo `unitesk.db` no mesmo diretório do executável
 
 ### Notificações Nativas
 
@@ -650,7 +709,7 @@ de desenvolvimento. Em produção (Tauri desktop), os dados persistem no Postgre
 - **Setup:** `vitest.config.ts` + `src/test/setup.ts`
 - **Comando:** `npx vitest run` ou `npx vitest` (modo watch)
 
-### Cobertura (75 testes)
+### Cobertura (143 testes)
 
 | Arquivo | Testes | O que testa |
 |---|---|---|
@@ -659,6 +718,11 @@ de desenvolvimento. Em produção (Tauri desktop), os dados persistem no Postgre
 | `Dashboard.test.tsx` | 18 | Cards de stats, **welcome card, progresso, timeline**, ações rápidas, export/import, **contadores animados**, **backend mockado** |
 | `ArticleManager.test.tsx` | 11 | CRUD de artigos, **status draft/published**, **filtros**, busca por termo, visualização de conteúdo, exclusão com confirmação |
 | `App.test.tsx` | 14 | Navegação entre abas, renderização de header/footer, destaque da aba ativa, **alternância de tema Dracula** |
+| `TimeTracking.test.tsx` | 23 | Timer, registro manual, filtros, fallback local, exclusão |
+| `Finance.test.tsx` | 20 | CRUD faturas, filtros, status, cálculo de totais |
+| `NotificationPanel.test.tsx` | 25 | Badge, dropdown, mark read/delete, time ago, fallback local |
+
+**Total: 143 testes, 8 arquivos**
 
 ### Padrão de Teste
 

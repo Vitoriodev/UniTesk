@@ -13,16 +13,16 @@
   --primary: #4f46e5;
   --primary-hover: #4338ca;
   --primary-light: #eef2ff;
-  --bg: #f8fafc;
+  --bg: #f1f5f9;
   --bg-card: #ffffff;
   --text: #1e293b;
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --text-secondary: #475569;
+  --border: #cbd5e1;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --radius: 12px;
   --radius-sm: 8px;
   --stat-projects: #4f46e5;
@@ -32,7 +32,7 @@
   --stat-users: #d97706;
   --stat-pending: #f59e0b;
   --stat-overdue: #ef4444;
-  --calendar-event-bg: #fefce8;
+  --calendar-event-bg: #fef9c3;
 }
 
 /* Tema Dracula (escuro) */
@@ -130,7 +130,6 @@ body {
   padding: 24px 32px;
   text-align: center;
   position: relative;
-  overflow: hidden;
 }
 
 .app-header::before {
@@ -1086,6 +1085,16 @@ body {
 
 [data-theme="dracula"] .notification-item--unread {
   background: rgba(189, 147, 249, 0.1);
+}
+
+/* Garantir contraste nos selects de formulário no tema escuro */
+[data-theme="dracula"] .form-input {
+  color-scheme: dark;
+}
+
+[data-theme="dracula"] .form-input option {
+  background: #1e1e2e;
+  color: #f8f8f2;
 }
 
 @media (max-width: 480px) {

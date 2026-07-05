@@ -31,7 +31,7 @@
       • Peça para alguém que já compilou o Unitesk
         te enviar o arquivo .deb
       • O arquivo se parece com:
-        Unitesk_2.0.0_amd64.deb
+        Unitesk_1.3.0_amd64.deb
 
    PASSO 2 - Instale o pacote
       Clique duas vezes no arquivo .deb:
@@ -126,5 +126,5 @@
      e instalar por cima (sudo dpkg -i novo_unitesk.deb)
 
 ───────────────────────────────────────────────────────────
-   🚀 Unitesk v2.0 — Gerencie seus projetos com eficiência
+   🚀 Unitesk v1.3 — Gerencie seus projetos com eficiência
 ───────────────────────────────────────────────────────────

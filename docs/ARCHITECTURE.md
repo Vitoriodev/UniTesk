@@ -6,7 +6,7 @@
 |------------------|-------------------------------------|
 | **Frontend**      | React 18 + TypeScript + Vite       |
 | **Backend**       | Rust + Tauri 2                     |
-| **Banco**         | PostgreSQL + SQLx                  |
+| **Banco**         | PostgreSQL + SQLx (SQLite no Windows) |
 | **Notificações**  | Tauri Plugin Notification          |
 | **UI**            | CSS Custom Properties              |
 | **Pacote**        | .deb (dpkg/apt)                    |
@@ -66,12 +66,16 @@ Tauri IPC (Rust)
     │  Comandos em lib.rs
     │
     ▼
-SQLx (PostgreSQL)
+SQLx (dupla plataforma)
     │
-    │  Queries em db.rs
+    │  #[cfg(target_os = "linux")] → PgPool ($1 binds)
+    │  #[cfg(target_os = "windows")] → SqlitePool (?1 binds)
     │
     ▼
-PostgreSQL Database
+┌──────────────────────┐
+│ Linux: PostgreSQL    │
+│ Windows: SQLite      │
+└──────────────────────┘
 ```
 
 ### Exportação ZIP
@@ -79,9 +83,9 @@ PostgreSQL Database
 React → invoke("export_project_zip", { projectId })
     │
     ▼
-Rust → db::export_project_zip()
-    │  Busca projeto + artigos + arquivos do DB
-    │  Cria ZIP em memória com zip crate
+Rust → db::export_project_zip() (função por #[cfg])
+    │  Busca projeto + artigos + arquivos
+    │  build_zip() (compartilhada) cria ZIP em memória
     ▼
 React → Recebe Vec<u8> → Cria blob → Download
 ```
