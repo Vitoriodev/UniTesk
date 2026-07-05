@@ -10,6 +10,7 @@ interface Assignment {
   notification_time: string | null;
   project_name: string;
   status: string;
+  priority: string;
 }
 
 interface AssignmentFile {
@@ -32,6 +33,7 @@ function CalendarView() {
     title: "",
     description: "",
     project_name: "",
+    priority: "medium",
   });
   const [newTime, setNewTime] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -142,6 +144,7 @@ function CalendarView() {
         dueDate: selectedDate,
         dueTime: newTime || null,
         projectName: newAssignment.project_name,
+        priority: newAssignment.priority,
       });
       resetForm();
       await loadAssignments();
@@ -157,6 +160,7 @@ function CalendarView() {
           notification_time: newTime || null,
           project_name: newAssignment.project_name,
           status: "pending" as const,
+          priority: newAssignment.priority,
         },
       ];
       setAssignments(updatedAssignments);
@@ -166,7 +170,7 @@ function CalendarView() {
   }
 
   function resetForm() {
-    setNewAssignment({ title: "", description: "", project_name: "" });
+    setNewAssignment({ title: "", description: "", project_name: "", priority: "medium" });
     setNewTime("");
     setShowModal(false);
     setErrorMessage(null);
@@ -365,6 +369,19 @@ function CalendarView() {
     }
   };
 
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return <span className="badge badge-overdue" style={{fontSize: '0.7rem'}}>🔴 Urgente</span>;
+      case "high":
+        return <span className="badge badge-overdue" style={{fontSize: '0.7rem', opacity: 0.8}}>🟠 Alta</span>;
+      case "low":
+        return <span className="badge badge-pending" style={{fontSize: '0.7rem'}}>🟢 Baixa</span>;
+      default:
+        return <span className="badge badge-progress" style={{fontSize: '0.7rem'}}>🔵 Média</span>;
+    }
+  };
+
   const sortedAssignments = useMemo(
     () =>
       [...assignments].sort(
@@ -560,14 +577,17 @@ function CalendarView() {
                           <p style={{ fontWeight: 600, marginBottom: 4 }}>
                             {assignment.title}
                           </p>
-                          <p style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
-                            {assignment.project_name && `📁 ${assignment.project_name} • `}
-                            📅{" "}
-                            {new Date(assignment.due_date).toLocaleDateString("pt-BR")}
-                            {hasTime && (
-                              <> • ⏰ {assignment.notification_time || assignment.due_time}</>
-                            )}
-                          </p>
+                          <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+                            {getPriorityBadge(assignment.priority)}
+                            <p style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+                              {assignment.project_name && `📁 ${assignment.project_name} • `}
+                              📅{" "}
+                              {new Date(assignment.due_date).toLocaleDateString("pt-BR")}
+                              {hasTime && (
+                                <> • ⏰ {assignment.notification_time || assignment.due_time}</>
+                              )}
+                            </p>
+                          </div>
                           {assignment.description && (
                             <p style={{ color: "var(--text-secondary)", fontSize: "0.8rem", marginTop: 4 }}>
                               {assignment.description}
@@ -683,6 +703,24 @@ function CalendarView() {
                   })
                 }
               />
+            </div>
+            <div className="form-group">
+              <label>Prioridade</label>
+              <select
+                className="form-input"
+                value={newAssignment.priority}
+                onChange={(e) =>
+                  setNewAssignment({
+                    ...newAssignment,
+                    priority: e.target.value,
+                  })
+                }
+              >
+                <option value="low">🟢 Baixa</option>
+                <option value="medium">🔵 Média</option>
+                <option value="high">🟠 Alta</option>
+                <option value="urgent">🔴 Urgente</option>
+              </select>
             </div>
             <div className="modal-actions">
               <button

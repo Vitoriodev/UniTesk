@@ -10,14 +10,14 @@ describe("ArticleManager", () => {
 
   it("renders the documents title", () => {
     render(<ArticleManager />);
-    expect(screen.getByText("📄 Documentos Acadêmicos")).toBeInTheDocument();
+    expect(screen.getByText("📄 Documentos")).toBeInTheDocument();
   });
 
   it("shows empty state when there are no articles", () => {
     render(<ArticleManager />);
     expect(screen.getByText("Nenhum documento cadastrado.")).toBeInTheDocument();
     expect(
-      screen.getByText(/Adicione documentos para seus projetos acadêmicos/)
+      screen.getByText(/Adicione documentos aos seus projetos!/)
     ).toBeInTheDocument();
   });
 

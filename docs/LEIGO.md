@@ -1,14 +1,26 @@
 ╔═══════════════════════════════════════════════════════╗
 ║                                                   ║
-║          🎓 UNITESK - GUIA RÁPIDO                   ║
-║     Gerenciador de Projetos Acadêmicos              ║
+║          🚀 UNITESK - GUIA RÁPIDO                   ║
+║     Gerenciador de Projetos                        ║
 ║                                                   ║
 ╚═══════════════════════════════════════════════════════╝
 
 
 📌 O QUE É O UNITESK?
-   Um programa para organizar seus projetos,
-   artigos e prazos da faculdade.
+   Um programa para gerenciar projetos, documentos,
+   prazos, clientes e equipes.
+
+
+═══════════════════════════════════════════════════════════
+   ✅ O QUE VOCÊ PODE FAZER
+═══════════════════════════════════════════════════════════
+
+   📊 Dashboard — Visão geral de projetos, prazos e metas
+   📁 Projetos — Crie e organize projetos (com cliente!)
+   🤝 Clientes — Cadastre empresas e pessoas físicas
+   📅 Atividades — Prazos com prioridade (baixa/média/alta/urgente)
+   📄 Documentos — Artigos, relatórios e documentos diversos
+   👥 Equipes — Crie equipes e adicione membros com cargos
 
 
 ═══════════════════════════════════════════════════════════
@@ -19,7 +31,7 @@
       • Peça para alguém que já compilou o Unitesk
         te enviar o arquivo .deb
       • O arquivo se parece com:
-        Unitesk_1.3.0_amd64.deb
+        Unitesk_2.0.0_amd64.deb
 
    PASSO 2 - Instale o pacote
       Clique duas vezes no arquivo .deb:
@@ -30,19 +42,12 @@
       Ou, se preferir, use o Terminal (Ctrl + Alt + T):
       
       cd ~/Downloads
-      sudo dpkg -i Unitesk_1.3.0_amd64.deb
+      sudo dpkg -i Unitesk_2.0.0_amd64.deb
       sudo apt-get install -f
 
    PASSO 3 - Pronto! 🎉
       • Procure por "Unitesk" no menu de aplicativos
       • Clique no ícone e pronto!
-
-   🔧 Se algo não funcionar
-      O instalador já tenta configurar o banco de dados
-      automaticamente. Se falhar:
-      
-      sudo systemctl start postgresql
-      sudo -u postgres createdb academic_manager
 
 
 ═══════════════════════════════════════════════════════════
@@ -78,12 +83,12 @@
       PASSO 3 - Pronto! O Unitesk foi removido.
 
 
-   💾 Seus dados (projetos, artigos, atividades) ficam
+   💾 Seus dados (projetos, clientes, atividades) ficam
       salvos no banco de dados e NÃO são apagados.
 
    ☠️  Para apagar TUDO (inclusive o banco de dados):
          sudo apt purge unitesk
-         sudo -u postgres psql -c "DROP DATABASE academic_manager;"
+         sudo -u postgres psql -c "DROP DATABASE unitesk;"
 
 
 ═══════════════════════════════════════════════════════════
@@ -97,8 +102,8 @@
       Se não estiver: sudo systemctl start postgresql
 
    2. O banco de dados existe?
-      sudo -u postgres psql -c "SELECT 1 FROM academic_manager.articles;"
-      Se der erro: sudo -u postgres createdb academic_manager
+      sudo -u postgres psql -c "SELECT 1 FROM unitesk.articles;"
+      Se der erro: sudo -u postgres createdb unitesk
 
    3. Execute pelo terminal para ver erros:
       unitesk
@@ -108,6 +113,12 @@
    💡 DICAS
 ═══════════════════════════════════════════════════════════
 
+   • Para criar um cliente: aba "Clientes" → "Novo Cliente"
+   • Para criar uma equipe: aba "Equipes" → "Nova Equipe"
+   • Para vincular cliente a projeto: ao criar/editar um
+     projeto, selecione o cliente no campo "Cliente"
+   • Para definir prioridade: ao criar uma atividade,
+     escolha entre Baixa, Média, Alta ou Urgente
    • Sempre feche o Unitesk antes de desligar o computador
    • Se precisar de ajuda, procure pelos arquivos da
      pasta "docs/"
@@ -115,5 +126,5 @@
      e instalar por cima (sudo dpkg -i novo_unitesk.deb)
 
 ───────────────────────────────────────────────────────────
-   🎓 Unitesk v1.3 — Gerenciador de Projetos Acadêmicos
+   🚀 Unitesk v2.0 — Gerencie seus projetos com eficiência
 ───────────────────────────────────────────────────────────

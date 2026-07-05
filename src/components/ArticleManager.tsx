@@ -234,7 +234,7 @@ function ArticleManager() {
           marginBottom: 20,
         }}
       >
-        <h2 style={{ fontSize: "1.4rem" }}>📄 Documentos Acadêmicos</h2>
+        <h2 style={{ fontSize: "1.4rem" }}>📄 Documentos</h2>
         <button
           className="btn btn-primary"
           onClick={() => setShowModal(true)}
@@ -284,7 +284,7 @@ function ArticleManager() {
               : "Nenhum documento cadastrado."}
           </p>
           <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>
-            {!searchTerm && "Adicione documentos para seus projetos acadêmicos!"}
+            {!searchTerm && "Adicione documentos aos seus projetos!"}
           </p>
           {!searchTerm && (
             <button

@@ -15,11 +15,11 @@ if [ "${1:-}" = "purge" ] || [ "${1:-}" = "remove" ]; then
     echo ""
     echo "⚠  ATENÇÃO: O Unitesk está sendo removido."
     echo ""
-    echo "   Seus DADOS (banco de dados PostgreSQL 'academic_manager')"
+    echo "   Seus DADOS (banco de dados PostgreSQL)"
     echo "   NÃO serão removidos automaticamente."
     echo ""
     echo "   Para remover o banco de dados manualmente:"
-    echo "     sudo -u postgres psql -c \"DROP DATABASE academic_manager;\""
+    echo "     sudo -u postgres psql -c \"DROP DATABASE unitesk;\"  # ou o nome do seu banco"
     echo ""
 fi
 

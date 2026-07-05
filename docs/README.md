@@ -1,11 +1,11 @@
 # 🎓 Unitesk
 
-Gerenciador de Projetos Acadêmicos — Aplicativo desktop para organizar
-artigos, atividades, arquivos e prazos da faculdade.
+Gerenciador de Projetos — Aplicativo desktop para organizar
+artigos, atividades, arquivos e prazos.
 
 ## ✨ Funcionalidades
 
-- 📁 **Projetos** — Crie, edite e exclua projetos acadêmicos
+- 📁 **Projetos** — Crie, edite e exclua projetos
 - 📄 **Artigos** — Armazene artigos e materiais de estudo
 - 📎 **Arquivos** — Anexe PDFs, imagens e documentos aos projetos
 - 📅 **Calendário** — Visualize prazos em calendário interativo com 🗑️ exclusão de atividades
@@ -42,7 +42,7 @@ sudo apt-get install -f
 A instalação configura automaticamente:
 - ✅ Binário em `/usr/bin/unitesk`
 - ✅ Atalho no menu de aplicativos
-- ✅ Banco de dados PostgreSQL (`academic_manager`)
+- ✅ Banco de dados PostgreSQL configurado
 - ✅ Arquivo de configuração em `/etc/unitesk/unitesk.conf`
 
 ### Desinstalação
@@ -74,7 +74,7 @@ sudo apt purge unitesk
 > 💾 Seus dados (projetos, artigos, atividades) ficam no banco PostgreSQL
 > e **não são removidos** ao desinstalar. Para removê-los manualmente:
 > ```bash
-> sudo -u postgres psql -c "DROP DATABASE academic_manager;"
+> sudo -u postgres psql -c "DROP DATABASE unitesk;"
 > ```
 
 ## 🔧 Para Desenvolvedores: Build do Pacote .deb
@@ -155,4 +155,4 @@ Comandos Tauri disponíveis no arquivo [API.md](./API.md).
 
 ---
 
-> Desenvolvido para manter os projetos da faculdade organizados! 📚✨
+> Organize seus projetos com eficiência! 📚✨

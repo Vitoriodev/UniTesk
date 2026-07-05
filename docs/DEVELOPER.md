@@ -1,6 +1,6 @@
 # 🎓 Unitesk — Documentação para Desenvolvedores
 
-> **Propósito:** Documentação completa do projeto Unitesk (Gerenciador de Projetos Acadêmicos),  
+> **Propósito:** Documentação completa do projeto Unitesk (Gerenciador de Projetos),  
 > criada para que **desenvolvedores humanos e IAs** possam entender, manter e estender o código.
 
 ---
@@ -31,7 +31,7 @@
 
 ## 📖 Visão Geral
 
-O **Unitesk** é um aplicativo desktop para gerenciamento de projetos acadêmicos.  
+O **Unitesk** é um aplicativo desktop para gerenciamento de projetos.  
 Ele permite organizar **projetos**, **artigos**, **atividades com prazo** e **arquivos**  
 em uma interface amigável, com calendário interativo e notificações nativas.
 
@@ -379,7 +379,7 @@ async fn nome_do_comando(
 **AppState:** Estado compartilhado contendo o `PgPool`.
 
 **Inicialização:** Em `run()` → `setup()`:
-1. Lê `DATABASE_URL` da env var (fallback: `postgres://postgres@localhost:5432/academic_manager`)
+1. Lê `DATABASE_URL` da env var (fallback: `postgres://postgres@localhost:5432/unitesk`)
 2. Conecta ao PostgreSQL via `db::init_db()`
 3. Gerencia o `AppState` com o pool
 4. Dispara `update_overdue_assignments` em background (spawn)
@@ -890,7 +890,7 @@ sudo apt-get install -f   # corrige dependências, se necessário
 ```
 
 O `postinst` configura automaticamente:
-1. Banco de dados PostgreSQL (`academic_manager`)
+1. Banco de dados PostgreSQL configurado
 2. Senha do usuário `postgres`
 3. Arquivo `/etc/unitesk/unitesk.conf` com `DATABASE_URL`
 
@@ -909,7 +909,7 @@ sudo apt purge unitesk
 O app busca a URL do banco nesta ordem:
 1. Variável de ambiente `DATABASE_URL`
 2. Arquivo `/etc/unitesk/unitesk.conf` (criado pelo postinst)
-3. Fallback: `postgres://postgres@localhost:5432/academic_manager`
+3. Fallback: `postgres://postgres@localhost:5432/unitesk`
 
 ### Build do .deb
 
@@ -1097,7 +1097,7 @@ npx vitest run
 
 # Verificar PostgreSQL
 pg_isready
-psql -U postgres -d academic_manager -c "SELECT COUNT(*) FROM assignments;"
+psql -U postgres -d unitesk -c "SELECT COUNT(*) FROM assignments;"
 ```
 
 ---

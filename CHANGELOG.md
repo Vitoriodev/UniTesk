@@ -280,4 +280,4 @@ Todas as alterações, correções e melhorias feitas no Unitesk.
 
 ---
 
-> 🎓 **Unitesk v1.0** — Gerenciador de Projetos Acadêmicos
+> 🎓 **Unitesk v1.0** — Gerenciador de Projetos e Atividades

@@ -2,7 +2,7 @@
 
 # 🎓 Unitesk
 
-**Gerenciador de Projetos Acadêmicos**
+**Gerencie seus projetos com eficiência**
 
 <p align="center">
   <img alt="Plataforma" src="https://img.shields.io/badge/plataforma-Linux%20%7C%20Ubuntu%20%7C%20Mint-blue?style=flat-square">
@@ -13,7 +13,7 @@
   <img alt="Banco" src="https://img.shields.io/badge/banco-PostgreSQL-336791?style=flat-square">
 </p>
 
-**Organize seus projetos, artigos, atividades e prazos da faculdade em um só lugar.**
+**Organize seus projetos, artigos, atividades e prazos em um só lugar.**
 
 <br>
 
@@ -54,7 +54,7 @@ sudo apt-get install -f
 |------|-----------|
 | 🖥️ **Binário** | `/usr/bin/unitesk` |
 | 📌 **Atalho** | Aparece no menu de aplicativos |
-| 🗄️ **Banco** | PostgreSQL (`academic_manager`) criado |
+| 🗄️ **Banco** | PostgreSQL configurado automaticamente |
 | ⚙️ **Config** | `/etc/unitesk/unitesk.conf` com `DATABASE_URL` |
 | 🔔 **Notificações** | Script para cron em `/usr/share/unitesk/scripts/` |
 
@@ -121,7 +121,7 @@ O `.deb` será gerado em `src-tauri/target/release/bundle/deb/`.
 
 <div align="center">
 
-**🎓 Unitesk v1.3** — Mantenha seus projetos acadêmicos organizados!
+**🎓 Unitesk v1.3** — Mantenha seus projetos organizados!
 
 <br>
 

@@ -22,10 +22,18 @@ describe("Dashboard", () => {
     invoke.mockResolvedValue({
       totalProjects: 0,
       totalArticles: 0,
+      totalClients: 0,
+      totalTeams: 0,
+      totalUsers: 0,
       pendingAssignments: 0,
       overdueAssignments: 0,
       nextDeadline: null,
       nextDeadlineName: null,
+      hoursToday: 0,
+      hoursWeek: 0,
+      totalRevenue: 0,
+      pendingInvoices: 0,
+      pendingAmount: 0,
     });
   });
 
@@ -42,7 +50,7 @@ describe("Dashboard", () => {
       expect(screen.getAllByText("Projetos").length).toBeGreaterThanOrEqual(1);
     });
     await waitFor(() => {
-      expect(screen.getAllByText("Artigos").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Documentos").length).toBeGreaterThanOrEqual(1);
     });
     await waitFor(() => {
       expect(screen.getAllByText("Pendentes").length).toBeGreaterThanOrEqual(1);
@@ -101,10 +109,18 @@ describe("Dashboard", () => {
     invoke.mockResolvedValue({
       totalProjects: 5,
       totalArticles: 12,
+      totalClients: 3,
+      totalTeams: 2,
+      totalUsers: 8,
       pendingAssignments: 3,
       overdueAssignments: 1,
       nextDeadline: "2026-07-15",
       nextDeadlineName: "Entrega Artigo Redes",
+      hoursToday: 120,
+      hoursWeek: 600,
+      totalRevenue: 15000,
+      pendingInvoices: 2,
+      pendingAmount: 8500,
     });
 
     render(<Dashboard onNavigate={onNavigate} />);
@@ -116,7 +132,7 @@ describe("Dashboard", () => {
       expect(screen.getByText("12")).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getAllByText("3").length).toBeGreaterThanOrEqual(1);
     });
     expect(screen.getAllByText("1").length).toBeGreaterThanOrEqual(1);
     await waitFor(() => {
@@ -150,8 +166,23 @@ describe("Dashboard", () => {
     });
   });
 
+  function mockStatsForExport() {
+    // Return dashboard stats for initial load, export data for export call
+    invoke.mockImplementation(async (_cmd: string) => {
+      if (_cmd === "export_all_data") {
+        return { version: "1.0.0", projects: [], articles: [], assignments: [],
+                 project_files: [], assignment_files: [] };
+      }
+      return { totalProjects: 0, totalArticles: 0, totalClients: 0, totalTeams: 0,
+               totalUsers: 0, pendingAssignments: 0, overdueAssignments: 0,
+               nextDeadline: null, nextDeadlineName: null,
+               hoursToday: 0, hoursWeek: 0, totalRevenue: 0, pendingInvoices: 0,
+               pendingAmount: 0 };
+    });
+  }
+
   it("calls export_all_data when export button is clicked", async () => {
-    invoke.mockResolvedValue({ version: "1.0.0", projects: [], articles: [], assignments: [], project_files: [], assignment_files: [] });
+    mockStatsForExport();
 
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -173,7 +204,7 @@ describe("Dashboard", () => {
   });
 
   it("shows success message after successful export", async () => {
-    invoke.mockResolvedValue({ version: "1.0.0", projects: [], articles: [], assignments: [], project_files: [], assignment_files: [] });
+    mockStatsForExport();
 
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -195,7 +226,10 @@ describe("Dashboard", () => {
   });
 
   it("shows error message when export fails", async () => {
-    invoke.mockRejectedValue(new Error("Falha na conexão"));
+    // Mock stats normally, but reject on any invoke call
+    invoke.mockImplementation(async (_cmd: string) => {
+      throw new Error("Falha na conexão");
+    });
 
     const user = userEvent.setup();
     render(<Dashboard />);

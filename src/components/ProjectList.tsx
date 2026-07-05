@@ -5,6 +5,8 @@ interface Project {
   id: number;
   name: string;
   description: string;
+  client_id: number | null;
+  client_name: string | null;
   created_at: string;
 }
 
@@ -12,6 +14,12 @@ interface Article {
   id: number;
   title: string;
   project_id: number;
+}
+
+interface Client {
+  id: number;
+  name: string;
+  company: string | null;
 }
 
 interface ProjectFile {
@@ -27,13 +35,14 @@ interface ProjectFile {
 function ProjectList() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [newProject, setNewProject] = useState({ name: "", description: "" });
-  const [editProject, setEditProject] = useState({ name: "", description: "" });
+  const [newProject, setNewProject] = useState({ name: "", description: "", client_id: null as number | null });
+  const [editProject, setEditProject] = useState({ name: "", description: "", client_id: null as number | null });
   const [newArticle, setNewArticle] = useState({ title: "", content: "" });
   const [projectFiles, setProjectFiles] = useState<Record<number, ProjectFile[]>>({});
   const [expandedFiles, setExpandedFiles] = useState<Record<number, boolean>>({});
@@ -46,6 +55,7 @@ function ProjectList() {
   useEffect(() => {
     loadProjects();
     loadArticles();
+    loadClients();
   }, []);
 
   async function loadProjects() {
@@ -54,6 +64,15 @@ function ProjectList() {
       setProjects(data);
     } catch {
       setProjects([]);
+    }
+  }
+
+  async function loadClients() {
+    try {
+      const data = await invoke<Client[]>("get_clients");
+      setClients(data);
+    } catch {
+      setClients([]);
     }
   }
 
@@ -78,13 +97,29 @@ function ProjectList() {
   async function createProject() {
     if (!newProject.name) return;
     try {
-      await invoke("create_project", { name: newProject.name, description: newProject.description });
-      setNewProject({ name: "", description: "" });
+      await invoke("create_project", {
+        name: newProject.name,
+        description: newProject.description,
+        clientId: newProject.client_id,
+      });
+      setNewProject({ name: "", description: "", client_id: null });
       setShowModal(false);
       loadProjects();
     } catch {
-      setProjects([...projects, { id: Date.now(), name: newProject.name, description: newProject.description, created_at: new Date().toISOString() }]);
-      setNewProject({ name: "", description: "" });
+      setProjects([
+        ...projects,
+        {
+          id: Date.now(),
+          name: newProject.name,
+          description: newProject.description,
+          client_id: newProject.client_id,
+          client_name: newProject.client_id
+            ? clients.find((c) => c.id === newProject.client_id)?.name || null
+            : null,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+      setNewProject({ name: "", description: "", client_id: null });
       setShowModal(false);
     }
   }
@@ -102,7 +137,11 @@ function ProjectList() {
 
   function openEditModal(project: Project) {
     setEditingProject(project);
-    setEditProject({ name: project.name, description: project.description || "" });
+    setEditProject({
+      name: project.name,
+      description: project.description || "",
+      client_id: project.client_id,
+    });
     setShowEditModal(true);
   }
 
@@ -113,6 +152,7 @@ function ProjectList() {
         id: editingProject.id,
         name: editProject.name,
         description: editProject.description,
+        clientId: editProject.client_id,
       });
       setShowEditModal(false);
       setEditingProject(null);
@@ -121,7 +161,15 @@ function ProjectList() {
       setProjects(
         projects.map((p) =>
           p.id === editingProject.id
-            ? { ...p, name: editProject.name, description: editProject.description }
+            ? {
+                ...p,
+                name: editProject.name,
+                description: editProject.description,
+                client_id: editProject.client_id,
+                client_name: editProject.client_id
+                  ? clients.find((c) => c.id === editProject.client_id)?.name || null
+                  : null,
+              }
             : p
         )
       );
@@ -262,7 +310,7 @@ function ProjectList() {
   return (
     <div>
       <div className="flex-between">
-        <h2 className="section-title">📁 Projetos Acadêmicos</h2>
+        <h2 className="section-title">📁 Projetos</h2>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           ➕ Novo Projeto
         </button>
@@ -283,7 +331,7 @@ function ProjectList() {
             Nenhum projeto ainda.
           </p>
           <p className="text-secondary" style={{ marginBottom: 16 }}>
-            Crie seu primeiro projeto acadêmico!
+            Crie seu primeiro projeto!
           </p>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             ➕ Criar Projeto
@@ -322,6 +370,12 @@ function ProjectList() {
                   {project.description || "Sem descrição"}
                 </p>
                 <div className="meta-info">
+                  {project.client_name && (
+                    <>
+                      <span className="badge badge-progress">🤝 {project.client_name}</span>
+                      <span>•</span>
+                    </>
+                  )}
                   <span>📄 {projectArticles.length} artigo(s)</span>
                   <span>•</span>
                   <span>
@@ -469,6 +523,26 @@ function ProjectList() {
                 }
               />
             </div>
+            <div className="form-group">
+              <label>Cliente (opcional)</label>
+              <select
+                className="form-input"
+                value={newProject.client_id ?? ""}
+                onChange={(e) =>
+                  setNewProject({
+                    ...newProject,
+                    client_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+              >
+                <option value="">Sem cliente</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.company ? ` (${c.company})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
                 Cancelar
@@ -506,6 +580,26 @@ function ProjectList() {
                   setEditProject({ ...editProject, description: e.target.value })
                 }
               />
+            </div>
+            <div className="form-group">
+              <label>Cliente</label>
+              <select
+                className="form-input"
+                value={editProject.client_id ?? ""}
+                onChange={(e) =>
+                  setEditProject({
+                    ...editProject,
+                    client_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+              >
+                <option value="">Sem cliente</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.company ? ` (${c.company})` : ""}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>

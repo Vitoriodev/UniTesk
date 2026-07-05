@@ -4,10 +4,18 @@ import { invoke } from "@tauri-apps/api/core";
 interface DashboardStats {
   totalProjects: number;
   totalArticles: number;
+  totalClients: number;
+  totalTeams: number;
+  totalUsers: number;
   pendingAssignments: number;
   overdueAssignments: number;
   nextDeadline: string | null;
   nextDeadlineName: string | null;
+  hoursToday: number;
+  hoursWeek: number;
+  totalRevenue: number;
+  pendingInvoices: number;
+  pendingAmount: number;
 }
 
 interface Assignment {
@@ -22,7 +30,7 @@ interface Assignment {
   created_at: string;
 }
 
-type Tab = "dashboard" | "projects" | "calendar" | "articles";
+type Tab = "dashboard" | "projects" | "calendar" | "articles" | "clients" | "teams" | "hours" | "finance";
 
 // Contador animado — anima de 0 até o valor final em ~400ms
 function AnimatedCounter({ value, duration = 400 }: { value: number; duration?: number }) {
@@ -60,10 +68,18 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
   const [stats, setStats] = useState<DashboardStats>({
     totalProjects: 0,
     totalArticles: 0,
+    totalClients: 0,
+    totalTeams: 0,
+    totalUsers: 0,
     pendingAssignments: 0,
     overdueAssignments: 0,
     nextDeadline: null,
     nextDeadlineName: null,
+    hoursToday: 0,
+    hoursWeek: 0,
+    totalRevenue: 0,
+    pendingInvoices: 0,
+    pendingAmount: 0,
   });
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [importing, setImporting] = useState(false);
@@ -82,10 +98,18 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
         setStats({
           totalProjects: 0,
           totalArticles: 0,
+          totalClients: 0,
+          totalTeams: 0,
+          totalUsers: 0,
           pendingAssignments: 0,
           overdueAssignments: 0,
           nextDeadline: null,
           nextDeadlineName: null,
+          hoursToday: 0,
+          hoursWeek: 0,
+          totalRevenue: 0,
+          pendingInvoices: 0,
+          pendingAmount: 0,
         });
         setStatsLoaded(true);
       }
@@ -184,11 +208,32 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
       color: "var(--stat-projects)",
     },
     {
-      title: "Artigos",
+      title: "Documentos",
       value: stats.totalArticles,
       icon: "📄",
       cssClass: "stat-card--articles",
       color: "var(--stat-articles)",
+    },
+    {
+      title: "Clientes",
+      value: stats.totalClients,
+      icon: "🤝",
+      cssClass: "stat-card--clients",
+      color: "var(--stat-clients)",
+    },
+    {
+      title: "Equipes",
+      value: stats.totalTeams,
+      icon: "👥",
+      cssClass: "stat-card--teams",
+      color: "var(--stat-teams)",
+    },
+    {
+      title: "Usuários",
+      value: stats.totalUsers,
+      icon: "👤",
+      cssClass: "stat-card--users",
+      color: "var(--stat-users)",
     },
     {
       title: "Pendentes",
@@ -395,9 +440,63 @@ function Dashboard({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
               </div>
             )}
           </div>
-        </div>
+        </div>          {/* Horas do Dia */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">⏱️ Horas Registradas</h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="stat-card" style={{ padding: 16, textAlign: "center" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Hoje</p>
+                <p style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--stat-projects)" }}>
+                  {Math.floor(stats.hoursToday / 60)}h {stats.hoursToday % 60}m
+                </p>
+              </div>
+              <div className="stat-card" style={{ padding: 16, textAlign: "center" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Esta Semana</p>
+                <p style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--stat-clients)" }}>
+                  {Math.floor(stats.hoursWeek / 60)}h {Math.round(stats.hoursWeek % 60)}m
+                </p>
+              </div>
+            </div>
+            <button
+              className="btn btn-secondary btn-sm"
+              style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
+              onClick={() => onNavigate?.("hours")}
+            >
+              ⏱️ Ver Controle de Horas →
+            </button>
+          </div>
 
-        {/* Quick Actions & Timeline */}
+          {/* Financeiro */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">💰 Financeiro</h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div style={{ padding: "12px 16px", background: "var(--bg)", borderRadius: "var(--radius-sm)", textAlign: "center" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Receita Total</p>
+                <p style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--stat-clients)" }}>
+                  R$ {stats.totalRevenue.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <div style={{ padding: "12px 16px", background: "var(--bg)", borderRadius: "var(--radius-sm)", textAlign: "center" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>A Receber</p>
+                <p style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--stat-pending)" }}>
+                  R$ {stats.pendingAmount.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+            </div>
+            <button
+              className="btn btn-secondary btn-sm"
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={() => onNavigate?.("finance")}
+            >
+              💰 Ver Financeiro →
+            </button>
+          </div>
+
+          {/* Quick Actions & Timeline */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div className="card">
             <div className="card-header">

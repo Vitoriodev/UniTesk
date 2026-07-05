@@ -21,8 +21,8 @@ if [ "${1:-}" = "purge" ]; then
 
     echo "   ✅ Arquivos de configuração do Unitesk removidos."
     echo ""
-    echo "   💾 Seus dados no banco PostgreSQL (academic_manager) foram preservados."
-    echo "     Para removê-los: sudo -u postgres psql -c \"DROP DATABASE academic_manager;\""
+    echo "   💾 Seus dados no banco PostgreSQL foram preservados."
+    echo "     Para removê-los: sudo -u postgres psql -c \"DROP DATABASE unitesk;\""
 fi
 
 exit 0

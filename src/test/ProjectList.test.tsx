@@ -10,14 +10,14 @@ describe("ProjectList", () => {
 
   it("renders the projects title", () => {
     render(<ProjectList />);
-    expect(screen.getByText("📁 Projetos Acadêmicos")).toBeInTheDocument();
+    expect(screen.getByText("📁 Projetos")).toBeInTheDocument();
   });
 
   it("shows empty state when there are no projects", () => {
     render(<ProjectList />);
     expect(screen.getByText("Nenhum projeto ainda.")).toBeInTheDocument();
     expect(
-      screen.getByText("Crie seu primeiro projeto acadêmico!")
+      screen.getByText("Crie seu primeiro projeto!")
     ).toBeInTheDocument();
   });
 

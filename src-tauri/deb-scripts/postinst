@@ -10,7 +10,7 @@ set -e
 
 CONFIG_DIR="/etc/unitesk"
 CONFIG_FILE="$CONFIG_DIR/unitesk.conf"
-DB_NAME="academic_manager"
+DB_NAME="unitesk"
 
 echo "🎓 Unitesk — Configurando ambiente..."
 

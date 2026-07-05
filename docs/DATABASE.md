@@ -10,7 +10,7 @@ gerenciado automaticamente pelo Rust na inicialização da aplicação
 
 | Tabela          | Descrição                          |
 |----------------|------------------------------------|
-| `projects`     | Projetos acadêmicos                |
+| `projects`     | Projetos                           |
 | `articles`     | Artigos vinculados a projetos      |
 | `assignments`  | Atividades com prazo (calendário)  |
 | `project_files`| Arquivos anexados aos projetos     |
@@ -24,18 +24,18 @@ sudo -u postgres psql
 ```
 
 ```sql
-CREATE DATABASE academic_manager;
-CREATE USER academic_user WITH PASSWORD 'sua_senha';
-GRANT ALL PRIVILEGES ON DATABASE academic_manager TO academic_user;
-\c academic_manager
-GRANT ALL ON SCHEMA public TO academic_user;
+CREATE DATABASE unitesk;
+CREATE USER unitesk_user WITH PASSWORD 'sua_senha';
+GRANT ALL PRIVILEGES ON DATABASE unitesk TO unitesk_user;
+\c unitesk
+GRANT ALL ON SCHEMA public TO unitesk_user;
 \q
 ```
 
 ### 2. Configurar variável de ambiente
 
 ```bash
-export DATABASE_URL="postgres://academic_user:sua_senha@localhost:5432/academic_manager"
+export DATABASE_URL="postgres://unitesk_user:sua_senha@localhost:5432/unitesk"
 ```
 
 Alternativamente, o instalador `.deb` cria automaticamente

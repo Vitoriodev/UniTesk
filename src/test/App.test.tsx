@@ -12,7 +12,7 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("Unitesk")).toBeInTheDocument();
     expect(
-      screen.getByText("Gerenciador de Projetos Acadêmicos")
+      screen.getByText(/Gerencie seus projetos com eficiência/)
     ).toBeInTheDocument();
   });
 
@@ -20,9 +20,10 @@ describe("App", () => {
     render(<App />);
     const nav = screen.getAllByRole("button");
     const tabLabels = nav.map((btn) => btn.textContent?.trim());
-    expect(tabLabels).toEqual(
-      expect.arrayContaining(["📊Dashboard", "📁Projetos", "📅Calendário", "📄Artigos"])
-    );
+    const expectedTabs = ["📊Dashboard", "📁Projetos", "🤝Clientes", "💰Financeiro", "⏱️Horas", "📅Atividades", "📄Documentos", "👥Equipes"];
+    expectedTabs.forEach((tab) => {
+      expect(tabLabels).toContain(tab);
+    });
   });
 
   it("shows Dashboard as the default tab", () => {
@@ -34,21 +35,21 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: /Projetos/ }));
-    expect(screen.getByText("📁 Projetos Acadêmicos")).toBeInTheDocument();
+    expect(screen.getByText("📁 Projetos")).toBeInTheDocument();
   });
 
-  it("navigates to Calendário tab when clicked", async () => {
+  it("navigates to Atividades tab when clicked", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: /Calendário/ }));
+    await user.click(screen.getByRole("button", { name: /Atividades/ }));
     expect(screen.getByText("📅 Calendário de Atividades")).toBeInTheDocument();
   });
 
-  it("navigates to Artigos tab when clicked", async () => {
+  it("navigates to Documentos tab when clicked", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: /Artigos/ }));
-    expect(screen.getByText("📄 Documentos Acadêmicos")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Documentos/ }));
+    expect(screen.getByText("📄 Documentos")).toBeInTheDocument();
   });
 
   it("highlights the active tab", async () => {
@@ -64,7 +65,7 @@ describe("App", () => {
 
   it("renders the footer", () => {
     render(<App />);
-    expect(screen.getByText(/Unitesk v1.3/)).toBeInTheDocument();
+    expect(screen.getByText(/Unitesk v2.0/)).toBeInTheDocument();
   });
 
   it("renders theme toggle button", () => {

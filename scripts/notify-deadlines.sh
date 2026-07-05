@@ -22,7 +22,7 @@ PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # === Caminhos do sistema (instalação .deb) ===
 BINARY_PATH="/usr/bin/unitesk"
-DB_NAME="academic_manager"
+DB_NAME="unitesk"
 ICON_PATH="/usr/share/icons/hicolor/512x512/apps/unitesk.png"
 
 # Fallback de ícone para diferentes tamanhos/temas
