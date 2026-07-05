@@ -1,0 +1,101 @@
+#!/bin/sh
+# ============================================================
+# 🎓 Unitesk — Script pós-instalação (.deb)
+# ============================================================
+# Executado automaticamente pelo dpkg após instalar o pacote.
+# Configura o banco de dados PostgreSQL e o ambiente.
+# ============================================================
+
+set -e
+
+CONFIG_DIR="/etc/unitesk"
+CONFIG_FILE="$CONFIG_DIR/unitesk.conf"
+DB_NAME="academic_manager"
+
+echo "🎓 Unitesk — Configurando ambiente..."
+
+# ---------------------------------------
+# 1. Criar diretório de configuração
+# ---------------------------------------
+mkdir -p "$CONFIG_DIR"
+
+# ---------------------------------------
+# 2. Configurar banco de dados PostgreSQL
+# ---------------------------------------
+echo "   • Configurando banco de dados PostgreSQL..."
+
+if command -v pg_isready >/dev/null 2>&1 && pg_isready >/dev/null 2>&1; then
+    echo "     PostgreSQL está rodando."
+
+    # Criar banco se não existir
+    DB_EXISTS=$(su - postgres -c "psql -lqt" 2>/dev/null | grep -c "$DB_NAME" || true)
+    if [ "$DB_EXISTS" -eq 0 ]; then
+        echo "     Criando banco de dados '$DB_NAME'..."
+        su - postgres -c "createdb $DB_NAME" 2>/dev/null || \
+        su - postgres -c "psql -c \"CREATE DATABASE $DB_NAME;\"" 2>/dev/null || \
+        echo "     ⚠ Aviso: Não foi possível criar o banco automaticamente."
+    else
+        echo "     Banco '$DB_NAME' já existe."
+    fi
+
+    # Configurar senha do postgres
+    su - postgres -c "psql -c \"ALTER USER postgres PASSWORD 'postgres';\"" 2>/dev/null || true
+    DATABASE_URL="postgres://postgres:postgres@localhost:5432/${DB_NAME}"
+else
+    echo "     ⚠ PostgreSQL não está rodando. Configure manualmente após a instalação."
+    echo "     Execute: sudo systemctl start postgresql"
+    echo "     Depois:  sudo -u postgres createdb $DB_NAME"
+    DATABASE_URL="postgres://postgres:postgres@localhost:5432/${DB_NAME}"
+fi
+
+# ---------------------------------------
+# 3. Criar arquivo de configuração
+# ---------------------------------------
+cat > "$CONFIG_FILE" << EOF
+# 🎓 Unitesk — Configuração
+# Gerado automaticamente em $(date -Iseconds)
+DATABASE_URL="$DATABASE_URL"
+EOF
+
+chmod 644 "$CONFIG_FILE"
+echo "   • Configuração criada: $CONFIG_FILE"
+
+# ---------------------------------------
+# 4. Executar schema SQL se existir
+# ---------------------------------------
+SETUP_SQL="/usr/share/unitesk/setup.sql"
+if [ -f "$SETUP_SQL" ]; then
+    echo "   • Executando schema SQL..."
+    su - postgres -c "psql -d $DB_NAME -f $SETUP_SQL" 2>/dev/null || \
+    echo "     ⚠ Aviso: Schema não pôde ser aplicado automaticamente."
+fi
+
+echo ""
+# ---------------------------------------
+# 5. Instalar script de notificações (cron job)
+# ---------------------------------------
+SCRIPTS_DIR="/usr/share/unitesk/scripts"
+NOTIFY_SCRIPT="$SCRIPTS_DIR/notify-deadlines.sh"
+
+if [ -f "$NOTIFY_SCRIPT" ]; then
+    chmod +x "$NOTIFY_SCRIPT"
+    echo ""
+    echo "   • Script de notificações instalado: $NOTIFY_SCRIPT"
+    echo ""
+    echo "   📌 Para ativar notificações automáticas de prazos,"
+    echo "      adicione ao crontab (crontab -e):"
+    echo ""
+    echo "      # Verificar prazos às 08:00, 12:00 e 18:00"
+    echo "      0 8,12,18 * * * $NOTIFY_SCRIPT"
+    echo ""
+    echo "      💡 Dica: use 'sudo crontab -e' para executar como"
+    echo "         root e garantir acesso ao PostgreSQL."
+fi
+
+echo ""
+echo "✅ Configuração do Unitesk concluída!"
+echo ""
+echo "📌 Para executar, procure por 'Unitesk' no menu de aplicativos"
+echo "   ou execute: unitesk"
+
+exit 0

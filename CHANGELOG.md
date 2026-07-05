@@ -4,6 +4,36 @@ Todas as alterações, correções e melhorias feitas no Unitesk.
 
 ---
 
+## [1.4.0] — Julho 2026 — Pacote .deb (Único Método de Instalação)
+
+### 📦 Empacotamento .deb Profissional
+
+- **`src-tauri/deb-scripts/`** — Criada estrutura de scripts de manutenção do pacote .deb:
+  - `postinst` — Configura banco PostgreSQL e ambiente automaticamente
+  - `prerm` — Avisa sobre preservação dos dados na desinstalação
+  - `postrm` — Remove configurações em `/etc/unitesk/` (purge)
+- **`lib.rs`** — Agora lê `DATABASE_URL` do arquivo `/etc/unitesk/unitesk.conf` como fallback
+- **`tauri.conf.json`** — Configurado com scripts .deb e dependências otimizadas
+
+### 🗑️ Scripts Antigos Removidos
+
+- `install.sh` — Instalador via terminal (removido)
+- `setup.sh` — Assistente GUI Zenity (removido)
+- `uninstall.sh` — Desinstalador via terminal (removido)
+- `unitesk.sh` — Wrapper para executar binário local (removido)
+- `unitesk-setup` — Binário launcher C (removido)
+- `src-tauri/src/setup_launcher.c` — Código-fonte do launcher (removido)
+
+### 📚 Documentação
+
+- `docs/README.md` — Atualizado com método único de instalação via .deb
+- `docs/LEIGO.md` — Simplificado com instruções apenas via pacote .deb
+- `docs/ARCHITECTURE.md` — Arquitetura atualizada sem métodos de instalação antigos
+- `docs/DEVELOPER.md` — Nova seção de empacotamento .deb, scripts de manutenção
+- `CHANGELOG.md` — Este registro
+
+---
+
 ## [1.3.0] — Julho 2026 — LTS Release
 
 ### 🎯 Melhorias de Qualidade (LTS)

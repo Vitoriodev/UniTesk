@@ -16,130 +16,113 @@ artigos, atividades, arquivos e prazos da faculdade.
 - 📤 **Exportar/Importar Backup** — Transfira todos os dados entre máquinas via arquivo `.unitesk`
 - 🌙 **Tema Dracula** — Alternne entre tema claro e escuro com um clique
 
-## 🛠️ Requisitos
+## 📦 Instalação via Pacote .deb (Único Método)
+
+> O Unitesk é distribuído **exclusivamente** como pacote `.deb`
+> para sistemas Debian, Ubuntu, Linux Mint e derivados.
+
+### Requisitos
 
 | Requisito     | Versão Mínima |
 |--------------|---------------|
-| Rust         | 1.70+         |
-| Node.js      | 18+           |
 | PostgreSQL   | 14+           |
-| npm          | 9+            |
 
-### Dependências de Sistema (Linux)
+### Instalação
 
 ```bash
+# 1. Instalar o pacote .deb
+sudo dpkg -i Unitesk_1.3.0_amd64.deb
+
+# 2. Corrigir dependências (se necessário)
+sudo apt-get install -f
+
+# 3. Pronto! Procure por "Unitesk" no menu de aplicativos
+```
+
+A instalação configura automaticamente:
+- ✅ Binário em `/usr/bin/unitesk`
+- ✅ Atalho no menu de aplicativos
+- ✅ Banco de dados PostgreSQL (`academic_manager`)
+- ✅ Arquivo de configuração em `/etc/unitesk/unitesk.conf`
+
+### Desinstalação
+
+#### 🖱️ Pela loja de aplicativos (sem terminal)
+
+**Ubuntu (Ubuntu Software):**
+1. Abra a "Ubuntu Software" no menu
+2. Clique na aba "Instalados"
+3. Procure por "Unitesk"
+4. Clique em "Remover"
+
+**Linux Mint (Gerenciador de Programas):**
+1. Abra o "Gerenciador de Programas"
+2. Vá em "Gerenciar" → "Instalados"
+3. Encontre "Unitesk"
+4. Clique em "Remover"
+
+#### ⌨️ Pelo Terminal
+
+```bash
+# Remover o Unitesk (preserva o banco de dados)
+sudo apt remove unitesk
+
+# Remover completamente (incluindo configurações)
+sudo apt purge unitesk
+```
+
+> 💾 Seus dados (projetos, artigos, atividades) ficam no banco PostgreSQL
+> e **não são removidos** ao desinstalar. Para removê-los manualmente:
+> ```bash
+> sudo -u postgres psql -c "DROP DATABASE academic_manager;"
+> ```
+
+## 🔧 Para Desenvolvedores: Build do Pacote .deb
+
+Se você deseja **compilar o Unitesk** e gerar o pacote `.deb`:
+
+### Pré-requisitos de Build
+
+```bash
+# Dependências de sistema
 sudo apt-get install -y \
   libwebkit2gtk-4.1-dev \
   libgtk-3-dev \
   libayatana-appindicator3-dev \
   librsvg2-dev \
   libjavascriptcoregtk-4.1-dev \
-  libssl-dev
+  libssl-dev \
+  postgresql postgresql-client
+
+# Rust (via https://rustup.rs)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Node.js 18+ (recomendado via nvm: https://nvm.sh)
 ```
 
-## 🚀 Instalação Rápida (Recomendado)
+### Build
 
-O assistente gráfico de instalação configura tudo para você:
-
-```bash
-# Torne executável e execute
-chmod +x setup.sh && ./setup.sh
-```
-
-Ou use o binário compilado (não precisa de terminal):
-
-```bash
-./unitesk-setup
-```
-
-O assistente mostra uma janela com botões para:
-- **📦 Instalar** — Configura dependências, banco e compila o app
-- **🗑️ Desinstalar** — Remove todos os dados e arquivos
-- **🔍 Verificar** — Checa pré-requisitos do sistema
-
-> 💡 O `unitesk-setup` executa o `setup.sh` em segundo plano, sem mostrar terminal.
-
-## 📦 Instalação via .deb (Distribuição)
-
-Para instalar o Unitesk em **outras máquinas**, use o pacote `.deb` gerado:
-
-```bash
-# Na máquina de destino, copie o .deb e instale:
-sudo dpkg -i Unitesk_1.0.0_amd64.deb
-sudo apt-get install -f        # corrige dependências faltantes
-
-# Configure o banco de dados:
-sudo -u postgres psql -c "CREATE DATABASE academic_manager;"
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-```
-
-Depois é só procurar "Unitesk" no menu de aplicativos. 🎉
-
-Para reconstruir o pacote:
 ```bash
 ./build-deb.sh
 ```
 
----
-
-## 🚀 Instalação Manual
-
-### 1. Navegue até a pasta do projeto
-
-```bash
-# Substitua pelo caminho da pasta onde você salvou o Unitesk
-cd ~/caminho/para/unitesk
-```
-
-### 2. Configure o banco de dados
-
-```bash
-# Criar banco
-sudo -u postgres createdb academic_manager
-
-# Configurar variável de ambiente
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/academic_manager"
-```
-
-### 3. Instale as dependências
-
-```bash
-npm install
-```
-
-### 4. Compilar para produção
-
-```bash
-npm run tauri build
-```
-
-O executável será gerado em `src-tauri/target/release/unitesk`.
-
-### 5. Executar
-
-```bash
-./unitesk.sh
-```
-
-Ou clique no ícone do Unitesk no menu de aplicativos.
+O `.deb` será gerado em `src-tauri/target/release/bundle/deb/`.
 
 ## 📂 Estrutura do Projeto
 
 ```
-projetos/unitesk/
+unitesk/
 ├── public/                  # Assets estáticos (favicon)
 ├── src/                     # Frontend React
 ├── src-tauri/               # Backend Rust + ícone personalizado
-├── setup.sh                 # Assistente de instalação (GUI)
-├── unitesk-setup            # Binário executável do assistente
-├── install.sh               # Instalador direto (terminal)
-├── uninstall.sh             # Desinstalador direto (terminal)
-├── unitesk.sh               # Script para executar o app
+│   ├── deb-scripts/         # Scripts de manutenção do pacote .deb
+│   │   ├── postinst         # Configuração pós-instalação
+│   │   ├── prerm            # Pré-remoção
+│   │   └── postrm           # Pós-remoção (purge)
+│   └── ...
 ├── build-deb.sh              # Script para gerar pacote .deb
 ├── CHANGELOG.md              # Histórico de alterações
 └── docs/                    # Documentação completa
-    ├── README.md            # Guia principal
-    ├── DEVELOPER.md       mentação completa
     ├── README.md            # Guia principal
     ├── DEVELOPER.md         # Documentação para desenvolvedores
     ├── ARCHITECTURE.md      # Arquitetura do projeto
@@ -152,13 +135,9 @@ projetos/unitesk/
 
 Consulte a [documentação para desenvolvedores](./DEVELOPER.md) para mais detalhes.
 
-> 📦 **NOVO!** O Unitesk agora pode ser distribuído como pacote `.deb`. Veja a [seção de instalação via .deb](#-instalação-via-deb-distribuição) acima.
-
-> 🖼️ **NOVO!** Ícone personalizado incluso no pacote e no menu de aplicativos.
-
 ## 🗄️ Banco de Dados
 
-PostgreSQL com as tabelas: `projects`, `articles`, `assignments`, `project_files`.
+PostgreSQL com as tabelas: `projects`, `articles`, `assignments`, `project_files`, `assignment_files`.
 
 Veja [DATABASE.md](./DATABASE.md) para setup e schema completo.
 
@@ -168,11 +147,11 @@ Comandos Tauri disponíveis no arquivo [API.md](./API.md).
 
 ## 🧪 Tech Stack
 
-| Frontend | Backend | Database |
-|---------|---------|----------|
-| React   | Rust    | PostgreSQL |
-| Vite    | Tauri 2 | SQLx     |
-| TypeScript | Tokio | —       |
+| Frontend | Backend | Database | Pacote |
+|---------|---------|----------|--------|
+| React   | Rust    | PostgreSQL | .deb   |
+| Vite    | Tauri 2 | SQLx     | dpkg   |
+| TypeScript | Tokio | —       | apt    |
 
 ---
 

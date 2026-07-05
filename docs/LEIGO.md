@@ -15,109 +15,93 @@
    ✅ COMO INSTALAR
 ═══════════════════════════════════════════════════════════
 
-   PASSO 1 - Abra o Terminal
-      • Pressione as teclas: Ctrl + Alt + T
-      • Ou procure por "Terminal" no menu do sistema
+   PASSO 1 - Obtenha o arquivo .deb
+      • Peça para alguém que já compilou o Unitesk
+        te enviar o arquivo .deb
+      • O arquivo se parece com:
+        Unitesk_1.3.0_amd64.deb
 
-   PASSO 2 - Navegue até a pasta do Unitesk
-      Digite no Terminal e pressione Enter:
-      (substitua pelo caminho da pasta onde você salvou)
-      
-      cd ~/caminho/para/unitesk
-
-   PASSO 3 - Execute o instalador interativo
-      Digite no Terminal e pressione Enter:
-      
-      ./setup.sh
-
-   PASSO 4 - Escolha "Instalar" no menu
-      • Use as setas do teclado para navegar
-      • Pressione Enter para selecionar
-      • O progresso será mostrado na tela
-
-   PASSO 5 - Aguarde a instalação
-      • O instalador vai configurar tudo sozinho
-      • Pode levar vários minutos na primeira vez
-      • Quando aparecer "✅ Instalação concluída!" está pronto!
-
-   PRONTO! 🎉
-   Agora você pode abrir o Unitesk pelo menu de aplicativos
-   ou digitando no Terminal:
-   
-   ./unitesk.sh
-
-
-═══════════════════════════════════════════════════════════
-   📦 INSTALAÇÃO VIA PACOTE .DEB (SEM COMPILAR)
-═══════════════════════════════════════════════════════════
-
-   Essa é a forma mais fácil — não precisa compilar nada!
-   Basta pegar o arquivo .deb pronto e instalar.
-
-   ⚠️  Você precisa de alguém que já tenha compilado o
-      Unitesk para gerar o pacote .deb para você.
-      O arquivo se chama algo como:
-      Unitesk_1.0.0_amd64.deb
-
-   PASSO 1 - Clique duas vezes no arquivo .deb
+   PASSO 2 - Instale o pacote
+      Clique duas vezes no arquivo .deb:
       • A loja de aplicativos (Ubuntu Software) vai abrir
       • Clique em "Instalar"
       • Digite sua senha quando pedir
 
-      Ou, se preferir, use o Terminal:
+      Ou, se preferir, use o Terminal (Ctrl + Alt + T):
       
       cd ~/Downloads
-      sudo dpkg -i Unitesk_1.0.0_amd64.deb
+      sudo dpkg -i Unitesk_1.3.0_amd64.deb
       sudo apt-get install -f
 
-   PASSO 2 - Configure o banco de dados (uma vez só)
-      Abra o Terminal (Ctrl + Alt + T) e digite:
+   PASSO 3 - Pronto! 🎉
+      • Procure por "Unitesk" no menu de aplicativos
+      • Clique no ícone e pronto!
+
+   🔧 Se algo não funcionar
+      O instalador já tenta configurar o banco de dados
+      automaticamente. Se falhar:
       
-      sudo -u postgres psql -c "CREATE DATABASE academic_manager;"
-      sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-
-   PASSO 3 - Pronto!
-      • Agora procure por "Unitesk" no menu de aplicativos
-      • Clique no ícone e pronto! 🎉
-
-   📌 Para desinstalar, vá em:
-      Configurações do Sistema → Aplicativos → Unitesk → Remover
+      sudo systemctl start postgresql
+      sudo -u postgres createdb academic_manager
 
 
 ═══════════════════════════════════════════════════════════
-   ❌ COMO DESINSTALAR
+   ❌ COMO DESINSTALAR (SEM USAR TERMINAL)
 ═══════════════════════════════════════════════════════════
 
-   PASSO 1 - Abra o Terminal (Ctrl + Alt + T)
+   🖱️  Método 1 — Pela loja de aplicativos (recomendado)
 
-   PASSO 2 - Navegue até a pasta do Unitesk
-      (substitua pelo caminho da pasta onde você salvou)
-      
-      cd ~/caminho/para/unitesk
+      No Ubuntu (Ubuntu Software):
+      1. Abra a "Ubuntu Software" no menu
+      2. Clique na aba "Instalados"
+      3. Procure por "Unitesk"
+      4. Clique em "Remover"
+      5. Digite sua senha quando pedir
 
-   PASSO 3 - Execute o gerenciador de instalação
-      
-      ./setup.sh
+      No Linux Mint (Gerenciador de Programas):
+      1. Abra o "Gerenciador de Programas"
+      2. Vá em "Gerenciar" → "Instalados"
+      3. Encontre "Unitesk"
+      4. Clique em "Remover"
 
-   PASSO 4 - Escolha "Desinstalar" no menu
-      • Confirme duas vezes para garantir
-      • O progresso será mostrado na tela
-      • Pronto! Tudo foi removido.
+      ✅ Pronto! O Unitesk foi removido.
+
+
+   ⌨️  Método 2 — Pelo Terminal
+
+      PASSO 1 - Abra o Terminal (Ctrl + Alt + T)
+
+      PASSO 2 - Digite:
+         
+         sudo apt remove unitesk
+
+      PASSO 3 - Pronto! O Unitesk foi removido.
+
+
+   💾 Seus dados (projetos, artigos, atividades) ficam
+      salvos no banco de dados e NÃO são apagados.
+
+   ☠️  Para apagar TUDO (inclusive o banco de dados):
+         sudo apt purge unitesk
+         sudo -u postgres psql -c "DROP DATABASE academic_manager;"
 
 
 ═══════════════════════════════════════════════════════════
-   ❓ AJUDA - O Programa Não Abre
+   ❓ AJUDA — O Programa Não Abre
 ═══════════════════════════════════════════════════════════
 
-   Se o Unitesk não abrir, tente:
+   Se o Unitesk não abrir, verifique:
 
-   1. Execute o instalador novamente:
-      ./install.sh
+   1. O PostgreSQL está rodando?
+      sudo systemctl status postgresql
+      Se não estiver: sudo systemctl start postgresql
 
-   2. Se ainda assim não funcionar, execute:
-      ./unitesk.sh
+   2. O banco de dados existe?
+      sudo -u postgres psql -c "SELECT 1 FROM academic_manager.articles;"
+      Se der erro: sudo -u postgres createdb academic_manager
 
-      e veja a mensagem de erro que aparece.
+   3. Execute pelo terminal para ver erros:
+      unitesk
 
 
 ═══════════════════════════════════════════════════════════
@@ -127,10 +111,9 @@
    • Sempre feche o Unitesk antes de desligar o computador
    • Se precisar de ajuda, procure pelos arquivos da
      pasta "docs/"
-   • Para atualizar o Unitesk, execute ./setup.sh novamente
-   • Você também pode executar ./install.sh (instalação direta)
-     ou ./uninstall.sh (desinstalação direta)
+   • Para reinstalar, basta baixar a nova versão .deb
+     e instalar por cima (sudo dpkg -i novo_unitesk.deb)
 
 ───────────────────────────────────────────────────────────
-   🎓 Unitesk v1.0 — Gerenciador de Projetos Acadêmicos
+   🎓 Unitesk v1.3 — Gerenciador de Projetos Acadêmicos
 ───────────────────────────────────────────────────────────

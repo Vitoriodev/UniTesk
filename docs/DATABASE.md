@@ -38,10 +38,8 @@ GRANT ALL ON SCHEMA public TO academic_user;
 export DATABASE_URL="postgres://academic_user:sua_senha@localhost:5432/academic_manager"
 ```
 
-Ou crie um arquivo `.env` na raiz do projeto (feito automaticamente pelo `setup.sh`).
-
-> ⚠️ Se você usa `nvm` para Node.js, o instalador (`setup.sh`) detecta
-> automaticamente e carrega o Node correto. Execute com `./setup.sh`
+Alternativamente, o instalador `.deb` cria automaticamente
+`/etc/unitesk/unitesk.conf` com a `DATABASE_URL` configurada.
 > ou `./unitesk-setup`.
 
 > 🛠️ **Correção necessária:** Se o app não conectar ao banco, verifique se a senha do

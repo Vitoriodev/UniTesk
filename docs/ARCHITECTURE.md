@@ -9,12 +9,12 @@
 | **Banco**         | PostgreSQL + SQLx                  |
 | **Notificações**  | Tauri Plugin Notification          |
 | **UI**            | CSS Custom Properties              |
-| **Instalador**    | Zenity (GUI) + Bash + C launcher   |
+| **Pacote**        | .deb (dpkg/apt)                    |
 
 ## 📁 Estrutura do Projeto
 
 ```
-projetos/unitesk/
+unitesk/
 ├── src/                         # Frontend React
 │   ├── main.tsx                 # Entry point
 │   ├── App.tsx                  # Componente principal com navegação
@@ -30,8 +30,11 @@ projetos/unitesk/
 │   │   ├── main.rs              # Entry point
 │   │   ├── lib.rs               # Comandos Tauri + setup
 │   │   ├── db.rs                # Operações de banco (CRUD + export ZIP)
-│   │   ├── models.rs            # Estruturas de dados
-│   │   └── setup_launcher.c     # Código-fonte do launcher binário
+│   │   └── models.rs            # Estruturas de dados
+│   ├── deb-scripts/             # Scripts de manutenção do pacote .deb
+│   │   ├── postinst             # Configuração pós-instalação
+│   │   ├── prerm                # Pré-remoção
+│   │   └── postrm               # Pós-remoção (purge)
 │   ├── Cargo.toml               # Dependências Rust
 │   └── tauri.conf.json          # Configuração Tauri
 ├── docs/                        # Documentação
@@ -42,11 +45,6 @@ projetos/unitesk/
 │   ├── LEIGO.md                 # Guia rápido para usuários
 │   ├── WINDOWS.md               # Plano para versão Windows
 │   └── setup.sql                # Schema SQL do banco
-├── setup.sh                     # Assistente de instalação (GUI com Zenity)
-├── unitesk-setup                # Binário do assistente (compilado com gcc)
-├── install.sh                   # Instalador direto (terminal)
-├── uninstall.sh                 # Desinstalador direto (terminal)
-├── unitesk.sh                   # Script para executar o app
 ├── build-deb.sh                 # Script para gerar pacote .deb
 ├── CHANGELOG.md                 # Histórico de alterações
 ├── package.json
@@ -100,22 +98,47 @@ React → Recebe Vec<u8> → Cria blob → Download
 | **Exportar ZIP**       | ProjectList.tsx            | `export_project_zip`             |
 | **Notificações**       | (automático)               | `check_today_assignments`        |
 
-## 🖥️ Instalação
+## 📦 Distribuição
 
-O projeto possui múltiplas formas de instalação:
+O Unitesk é distribuído **exclusivamente** como pacote `.deb`.
 
-| Método                  | Interface       | Quando usar                        |
-|------------------------|----------------|------------------------------------|
-| `./setup.sh`           | Zenity (GUI)   | Usuário com terminal               |
-| `./unitesk-setup`      | Zenity (GUI)   | Usuário leigo (duplo clique)       |
-| `./install.sh`         | Terminal       | Instalação direta/depuração        |
-| `npx tauri build`      | —              | Desenvolvedores                    |
-| `sudo dpkg -i *.deb`   | —              | Distribuição para outras máquinas  |
+### Build
 
-O `unitesk-setup` é um binário ELF compilado de `setup_launcher.c` que:
-- Encontra o `setup.sh` no mesmo diretório
-- Executa em segundo plano via `fork()` + `setsid()` (sem mostrar terminal)
-- Redireciona saídas para `/tmp/unitesk_setup.log`
+```bash
+./build-deb.sh
+```
+
+O comando acima:
+1. Instala dependências npm
+2. Compila o frontend (React → Vite)
+3. Compila o backend (Rust → Tauri)
+4. Gera o pacote `.deb` em `src-tauri/target/release/bundle/deb/`
+
+### Instalação na máquina de destino
+
+```bash
+sudo dpkg -i Unitesk_*.deb
+sudo apt-get install -f
+```
+
+### O que o pacote .deb instala
+
+| Caminho                      | Descrição                          |
+|------------------------------|------------------------------------|
+| `/usr/bin/unitesk`           | Binário principal                  |
+| `/usr/share/applications/`   | Atalho no menu                     |
+| `/usr/share/icons/`          | Ícones do aplicativo               |
+| `/etc/unitesk/unitesk.conf`  | Configuração (DATABASE_URL)        |
+
+### Scripts de manutenção (.deb)
+
+O pacote inclui scripts que executam durante instalação/remoção:
+
+| Script   | Execução                  | Função                                     |
+|----------|---------------------------|--------------------------------------------|
+| postinst | Após instalação           | Cria banco PostgreSQL, configura ambiente  |
+| prerm    | Antes da remoção          | Avisa sobre preservação dos dados          |
+| postrm   | Após remoção (purge)      | Remove configurações em `/etc/unitesk/`    |
 
 ## 🔐 Segurança
 
@@ -124,4 +147,3 @@ O `unitesk-setup` é um binário ELF compilado de `setup_launcher.c` que:
 - Tipagem forte em toda comunicação Frontend ↔ Backend
 - Notificações com permissão explícita do usuário
 - Validação de tamanho de arquivo (10 MB max) no upload
-- Confirmação em 2 etapas na desinstalação

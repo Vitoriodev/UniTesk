@@ -320,10 +320,30 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            let database_url =
-                std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-                    "postgres://postgres@localhost:5432/academic_manager".to_string()
-                });
+            // Ordem de precedência para DATABASE_URL:
+            // 1. Variável de ambiente DATABASE_URL
+            // 2. Arquivo /etc/unitesk/unitesk.conf (instalação via .deb)
+            // 3. Fallback: postgres://postgres@localhost:5432/academic_manager
+            let database_url = std::env::var("DATABASE_URL").or_else(|_| {
+                // Tentar ler do arquivo de configuração do .deb
+                let config_path = std::path::Path::new("/etc/unitesk/unitesk.conf");
+                if config_path.exists() {
+                    if let Ok(content) = std::fs::read_to_string(config_path) {
+                        for line in content.lines() {
+                            if let Some(value) = line.strip_prefix("DATABASE_URL=\"") {
+                                if let Some(end) = value.find('"') {
+                                    return Ok(value[..end].to_string());
+                                }
+                            } else if let Some(value) = line.strip_prefix("DATABASE_URL=") {
+                                return Ok(value.to_string());
+                            }
+                        }
+                    }
+                }
+                Err(std::env::VarError::NotPresent)
+            }).unwrap_or_else(|_| {
+                "postgres://postgres@localhost:5432/academic_manager".to_string()
+            });
 
             let pool = tauri::async_runtime::block_on(async {
                 match db::init_db(&database_url).await {

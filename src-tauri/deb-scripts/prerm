@@ -1,0 +1,26 @@
+#!/bin/sh
+# ============================================================
+# 🎓 Unitesk — Script pré-remoção (.deb)
+# ============================================================
+# Executado automaticamente pelo dpkg antes de remover o pacote.
+# Notifica o usuário sobre a preservação dos dados.
+# ============================================================
+
+set -e
+
+echo "🎓 Unitesk — Preparando remoção..."
+
+# Verificar se é uma desinstalação completa (purge) ou apenas remoção
+if [ "${1:-}" = "purge" ] || [ "${1:-}" = "remove" ]; then
+    echo ""
+    echo "⚠  ATENÇÃO: O Unitesk está sendo removido."
+    echo ""
+    echo "   Seus DADOS (banco de dados PostgreSQL 'academic_manager')"
+    echo "   NÃO serão removidos automaticamente."
+    echo ""
+    echo "   Para remover o banco de dados manualmente:"
+    echo "     sudo -u postgres psql -c \"DROP DATABASE academic_manager;\""
+    echo ""
+fi
+
+exit 0

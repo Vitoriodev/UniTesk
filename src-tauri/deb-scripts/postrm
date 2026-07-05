@@ -1,0 +1,28 @@
+#!/bin/sh
+# ============================================================
+# 🎓 Unitesk — Script pós-remoção (.deb)
+# ============================================================
+# Executado automaticamente pelo dpkg após remover o pacote.
+# Remove arquivos de configuração apenas em purge.
+# ============================================================
+
+set -e
+
+CONFIG_DIR="/etc/unitesk"
+
+# Apenas em purge (remoção completa incluindo configs)
+if [ "${1:-}" = "purge" ]; then
+    echo "🎓 Unitesk — Removendo arquivos de configuração..."
+
+    if [ -d "$CONFIG_DIR" ]; then
+        rm -rf "$CONFIG_DIR"
+        echo "   • Configurações removidas: $CONFIG_DIR"
+    fi
+
+    echo "   ✅ Arquivos de configuração do Unitesk removidos."
+    echo ""
+    echo "   💾 Seus dados no banco PostgreSQL (academic_manager) foram preservados."
+    echo "     Para removê-los: sudo -u postgres psql -c \"DROP DATABASE academic_manager;\""
+fi
+
+exit 0

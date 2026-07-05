@@ -144,8 +144,11 @@ unitesk/
 │   │   ├── main.rs               # Entry point do Tauri
 │   │   ├── lib.rs                # Comandos Tauri + setup do app
 │   │   ├── db.rs                 # Operações de banco (CRUD + migrações)
-│   │   ├── models.rs             # Structs de dados (serde + sqlx::FromRow)
-│   │   └── setup_launcher.c      # Código-fonte do binário unitesk-setup
+│   │   └── models.rs             # Structs de dados (serde + sqlx::FromRow)
+│   ├── deb-scripts/              # Scripts de manutenção do pacote .deb
+│   │   ├── postinst              # Configuração pós-instalação
+│   │   ├── prerm                 # Pré-remoção
+│   │   └── postrm                # Pós-remoção (purge)
 │   ├── Cargo.toml                # Dependências Rust
 │   ├── tauri.conf.json           # Configuração do Tauri (janela, build, .deb)
 │   ├── public/                    # Assets estáticos (favicon)
@@ -172,12 +175,7 @@ unitesk/
 ├── vitest.config.ts              # Configuração do Vitest
 ├── index.html                    # HTML entry point
 │
-├── install.sh                    # Instalador via terminal
-├── setup.sh                      # Assistente de instalação com Zenity (GUI)
-├── uninstall.sh                  # Desinstalador via terminal
-├── unitesk.sh                    # Script wrapper para executar o app
-├── unitesk-setup                 # Binário compilado do assistente (C)
-└── build-deb.sh                  # Script para gerar pacote .deb
+└── build-deb.sh                  # Script para gerar pacote .deb (único método)
 ```
 
 ---
@@ -776,21 +774,25 @@ npm install        # Instalar dependências
 npm run dev        # Iniciar servidor Vite (porta 1420)
 ```
 
-### Build Completo (Tauri + Frontend)
+### Build do Pacote .deb (Único Método de Instalação)
+
+> O Unitesk é distribuído **exclusivamente** como pacote `.deb`.
+> Para instalar em outra máquina, gere o .deb e instale com `dpkg`.
 
 ```bash
-# 1. Configurar banco
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/academic_manager"
+# 1. Gerar o pacote .deb
+./build-deb.sh
 
-# 2. Build Tauri (compila frontend + Rust + gera .deb)
-npm run tauri build
+# O .deb será gerado em:
+# src-tauri/target/release/bundle/deb/Unitesk_1.3.0_amd64.deb
 
-# Para build mais rápido (sem gerar .deb):
-npx tauri build --no-bundle
-
-# 3. Executar
-./unitesk.sh
+# 2. Instalar na máquina de destino
+sudo dpkg -i Unitesk_1.3.0_amd64.deb
+sudo apt-get install -f
 ```
+
+> 💡 Para build mais rápido durante desenvolvimento (sem gerar .deb):
+> `npx tauri build --no-bundle`
 
 ### Scripts npm
 
@@ -853,63 +855,72 @@ Sempre verifique:
 
 ---
 
-## 📜 Scripts de Instalação
+## 📦 Pacote .deb (Único Método de Instalação)
 
-### Hierarquia dos instaladores
+O Unitesk é distribuído **exclusivamente** como pacote `.deb`.
+Não há mais scripts de instalação por compilação local.
+
+### Estrutura do Pacote
+
+O pacote `.deb` é gerado pelo Tauri bundler com scripts de manutenção
+customizados em `src-tauri/deb-scripts/`.
 
 ```
-unitesk-setup (binário C compilado - 17KB)
-    │
-    │ fork() + setsid() + execl()
-    ▼
-setup.sh (assistente GUI com Zenity) / install.sh (terminal)
-    │
-    ├── Verifica pré-requisitos (Node, Rust, PostgreSQL)
-    ├── Instala dependências de sistema (apt-get)
-    ├── npm ci (package-lock) ou npm install — flags --no-fund --no-audit ⚡
-    ├── Configura PostgreSQL (cria banco)
-    ├── Cria .env com DATABASE_URL
-    ├── npx tauri build --no-bundle (frontend + backend em 1 passo) ⚡
-    ├── Cria unitesk.sh (wrapper)
-    └── Cria .desktop (atalho no menu)
-
-uninstall.sh (remove tudo: banco, build, atalhos)
-build-deb.sh (gera pacote .deb para distribuição)
+src-tauri/deb-scripts/
+├── postinst    # Configura banco PostgreSQL e ambiente pós-instalação
+├── prerm       # Avisa sobre preservação dos dados na remoção
+└── postrm      # Remove configurações em /etc/unitesk/ (apenas purge)
 ```
 
-### unitesk-setup (C Launcher)
+### O que o .deb instala no sistema
 
-- Código-fonte: `src-tauri/src/setup_launcher.c`
-- Compilado com: `gcc -O2 -o unitesk-setup setup_launcher.c`
-- Função: Encontra `setup.sh` no mesmo diretório e executa em background
-- Usa `fork()` + `setsid()` para desassociar do terminal
-- Log em `/tmp/unitesk_setup.log`
+| Caminho                      | Descrição                          |
+|------------------------------|------------------------------------|
+| `/usr/bin/unitesk`           | Binário principal                  |
+| `/usr/share/applications/`   | Atalho no menu                     |
+| `/usr/share/icons/`          | Ícones do aplicativo               |
+| `/etc/unitesk/unitesk.conf`  | Configuração (DATABASE_URL)        |
 
-### Otimizações de Performance (v1.2.0)
+### Instalação
 
-Os scripts de instalação foram otimizados para reduzir o tempo total:
+```bash
+# Na máquina de destino
+sudo dpkg -i Unitesk_1.3.0_amd64.deb
+sudo apt-get install -f   # corrige dependências, se necessário
+```
 
-1. **`npm ci` no lugar de `npm install`** — Quando `package-lock.json` existe, `npm ci`
-   é 2-5x mais rápido por ser determinístico (não resolve versões, só instala o lock).
-   Flags `--no-fund --no-audit` eliminam verificações desnecessárias.
+O `postinst` configura automaticamente:
+1. Banco de dados PostgreSQL (`academic_manager`)
+2. Senha do usuário `postgres`
+3. Arquivo `/etc/unitesk/unitesk.conf` com `DATABASE_URL`
 
-2. **Build duplicado eliminado** — O `tauri.conf.json` define `beforeBuildCommand: "npm run build"`,
-   então `npx tauri build` já compila o frontend automaticamente. Os scripts antes rodavam
-   `npm run build` separadamente, compilando o frontend **duas vezes**. Agora só compila uma.
+### Desinstalação
 
-3. **`--no-bundle` no Tauri** — `npx tauri build --no-bundle` pula a geração do pacote `.deb`,
-   economizando minutos. O binário é gerado normalmente em `src-tauri/target/release/unitesk`.
-   Para distribuição, use `build-deb.sh` ou rode sem `--no-bundle`.
+```bash
+# Remove o aplicativo (preserva o banco de dados)
+sudo apt remove unitesk
 
-**Ganho estimado:** 1-2 minutos em média numa instalação completa.
+# Remove completamente (incluindo /etc/unitesk/)
+sudo apt purge unitesk
+```
 
-### unitesk.sh (Wrapper)
+### Configuração do DATABASE_URL
 
-Script que:
-1. Carrega NVM (Node Version Manager) se existir
-2. Source do arquivo `.env` para `DATABASE_URL`
-3. Executa o binário compilado `src-tauri/target/release/unitesk`
-4. Se o binário não existir, mostra erro via `echo` + `notify-send`
+O app busca a URL do banco nesta ordem:
+1. Variável de ambiente `DATABASE_URL`
+2. Arquivo `/etc/unitesk/unitesk.conf` (criado pelo postinst)
+3. Fallback: `postgres://postgres@localhost:5432/academic_manager`
+
+### Build do .deb
+
+```bash
+./build-deb.sh
+```
+
+O script:
+1. Instala dependências npm (`npm ci` ou `npm install`)
+2. Executa `npx tauri build` (compila frontend + Rust + gera .deb)
+3. Mostra o caminho do arquivo .deb gerado
 
 ---
 
@@ -1063,7 +1074,7 @@ function Componente() {
 
 | Problema | Causa Provável | Solução |
 |---|---|---|
-| App não abre pelo menu | `unitesk.sh` não existe | Executar `./setup.sh` para recriar |
+| App não abre pelo menu | Instalação corrompida | Reinstalar: `sudo dpkg -i Unitesk_*.deb` |
 | "Não foi possível conectar ao banco" | PostgreSQL não está rodando | `sudo systemctl start postgresql` |
 | "Password authentication failed" | Senha do postgres não configurada | `sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"` |
 | Atividade não salva no calendário | Backend Tauri falhou (catch usou localStorage) | Verificar log do Tauri, testar conexão DB |
@@ -1075,9 +1086,6 @@ function Componente() {
 ### Verificações Rápidas
 
 ```bash
-# Verificar sintaxe bash
-bash -n install.sh && bash -n setup.sh && bash -n unitesk.sh
-
 # Verificar compilação Rust
 cd src-tauri && cargo check
 
@@ -1230,14 +1238,14 @@ O Unitesk possui um ícone personalizado (`unitesk_icon_512.png`) usado em todo 
 |---|---|---|
 | **Tauri bundle** (.deb) | `src-tauri/icons/unitesk_icon_512.png` | `tauri.conf.json` → `bundle.icon` |
 | **Favicon** (desenvolvimento) | `public/icon.png` | `index.html` → `<link rel="icon">` |
-| **Atalho .desktop** (menu) | `src-tauri/icons/unitesk_icon_512.png` | `install.sh` / `setup.sh` → `Icon=` |
+| **Atalho .desktop** (menu) | `src-tauri/icons/unitesk_icon_512.png` | Tauri bundler → `Icon=` |
 
 ### Como funciona
 
 1. O arquivo original é `src-tauri/icons/unitesk_icon_512.png`
 2. Durante o build Tauri, esse ícone é incluído no pacote `.deb`
 3. Uma cópia é mantida em `public/icon.png` para servir como favicon no frontend (modo dev)
-4. Os scripts de instalação (`install.sh` e `setup.sh`) referenciam o caminho absoluto no arquivo `.desktop`
+4. O Tauri bundler configura o atalho .desktop automaticamente no pacote
 
 ### Para trocar o ícone
 
