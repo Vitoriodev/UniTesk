@@ -93,6 +93,39 @@ if [ -f "$NOTIFY_SCRIPT" ]; then
 fi
 
 echo ""
+# ---------------------------------------
+# 6. Criar wrapper para resolver conflito snap/core20
+# ---------------------------------------
+BINARY="/usr/bin/unitesk"
+REAL_BINARY="/usr/lib/unitesk/unitesk"
+
+# Move o binário real para o diretório de lib
+mkdir -p "/usr/lib/unitesk"
+if [ -f "$BINARY" ] && [ ! -d "$BINARY" ]; then
+    mv -f "$BINARY" "$REAL_BINARY" 2>/dev/null || true
+fi
+
+# Cria wrapper script que força libpthread do sistema
+cat > "$BINARY" << 'WRAPPER'
+#!/bin/sh
+# Unitesk Wrapper
+# Resolve conflito com snap/core20 que injeta libpthread antiga
+# Força o uso da libpthread do sistema quando necessário
+
+SNAP_LIB="/snap/core20/current/lib/x86_64-linux-gnu/libpthread.so.0"
+SYS_LIB="/usr/lib/x86_64-linux-gnu/libpthread.so.0"
+
+# Só usa LD_PRELOAD se o snap estiver presente
+if [ -f "$SNAP_LIB" ] && [ -f "$SYS_LIB" ]; then
+    export LD_PRELOAD="$SYS_LIB"
+fi
+
+exec /usr/lib/unitesk/unitesk "$@"
+WRAPPER
+
+chmod +x "$BINARY"
+
+echo ""
 echo "✅ Configuração do Unitesk concluída!"
 echo ""
 echo "📌 Para executar, procure por 'Unitesk' no menu de aplicativos"
