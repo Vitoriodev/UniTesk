@@ -1068,6 +1068,121 @@ function Componente() {
 
 ---
 
+## 🔒 Análise de Segurança
+
+### Backend Rust
+
+**✅ SQL Injection — Protegido**
+Todas as queries SQL utilizam `sqlx::query()` com bind parameters (`$1`, `$2`, etc.) via `.bind()`. 
+Nenhuma string é concatenada diretamente em queries. Isso elimina completamente risco de SQL injection.
+
+Exemplo seguro:
+```rust
+sqlx::query("INSERT INTO projects (name) VALUES ($1)")
+    .bind(&project.name)  // ← Nunca concatenado!
+    .execute(pool)
+```
+
+**✅ Path Traversal (Zip Slip) — Protegido**
+Função `sanitize_filename()` em `db.rs`:
+- Extrai apenas o `basename` do caminho original
+- Remove `..` (path traversal)
+- Substitui `/`, `\`, `~` por `_`
+- Filtra apenas caracteres alfanuméricos, `-`, `_`, `.` e espaço
+- Trunca para 200 caracteres máximos
+
+**✅ Upload de Arquivos — Validado**
+- Tamanho máximo: **10 MB** (verificado tanto no frontend quanto no backend)
+- Nome sanitizado com UUID único (`stored_name`) — previne colisão e sobrescrita
+- MIME type registrado para classificação
+
+**⚠️ Tratamento de Erros — Padrão Seguro**
+- Comandos Tauri retornam `Result<T, String>` — erros internos não vazam para o frontend
+- Mensagens de erro genéricas (`"Erro ao carregar projetos"`) sem detalhes internos
+- Logs de erro usam `eprintln!` — não expostos ao usuário
+
+**⚠️ Config Database URL**
+A URL de conexão é lida nesta ordem:
+1. `DATABASE_URL` (env var)
+2. `/etc/unitesk/unitesk.conf`
+3. Fallback hardcoded: `postgres://postgres@localhost:5432/unitesk`
+
+> 🔒 A senha `postgres` no fallback é apenas para ambiente local. 
+> Em produção, configure `DATABASE_URL` com credenciais fortes.
+
+### Frontend React
+
+**✅ XSS — Protegido**
+- Nenhum uso de `dangerouslySetInnerHTML`
+- Nenhum `eval()` ou `document.write()`
+- React renderiza todo texto com escape automático (`{text}`)
+
+**✅ Dados Sensíveis**
+- localStorage usado apenas para:
+  - Preferência de tema (`unitesk_theme`)
+  - Fallback offline de dados (`unitesk_assignments`, `unitesk_articles`, `unitesk_article_statuses_v2`)
+- Nenhuma senha, token ou dado crítico armazenado
+
+**✅ CSP (Content Security Policy)**
+Configurado no `tauri.conf.json`:
+```
+default-src 'self'; connect-src 'self' https:;
+img-src 'self' data:; style-src 'self' 'unsafe-inline';
+script-src 'self'
+```
+Restringe:
+- Scripts apenas da mesma origem (`'self'`)
+- Conexões apenas para `https:`
+- `unsafe-inline` necessário para estilos dinâmicos do tema Dracula
+
+### Scripts Bash (.deb)
+
+**⚠️ Segurança dos Scripts de Instalação**
+- `postinst` usa `su - postgres -c "psql ..."` — seguro, conecta via socket local
+- `notify-deadlines.sh` usa `sudo -u postgres psql` com fallback TCP local
+- Nenhuma senha em texto plano nos scripts
+- Nenhum uso de `eval()` com entrada não confiável
+
+**⚠️ Wrapper `/usr/bin/unitesk`**
+O wrapper script detecta snap/core20 e define `LD_PRELOAD`. 
+Isso NÃO representa risco de segurança porque:
+- A libpthread do sistema já está no `ldconfig` (apenas priorizada)
+- `LD_PRELOAD` é resetado para processos filho (Tauri não herda)
+- Apenas atua quando o snap está presente
+
+### Dependências
+
+**⚠️ Cargo Audit**
+Para verificar vulnerabilidades conhecidas nas dependências Rust:
+```bash
+cargo install cargo-audit
+cd src-tauri && cargo audit
+```
+
+**⚠️ npm audit**
+Para verificar vulnerabilidades nas dependências npm:
+```bash
+npm audit
+```
+
+### Rede
+
+**✅ Sem Exposição de Rede**
+- O Unitesk é uma aplicação desktop local
+- Conexão PostgreSQL apenas via `localhost`
+- Nenhum servidor HTTP exposto
+- Nenhuma telemetria ou coleta de dados
+
+### Checklist de Segurança Pré-Release
+
+- [ ] `cargo audit` — sem vulnerabilidades críticas
+- [ ] `npm audit` — sem vulnerabilidades críticas
+- [ ] `DATABASE_URL` configurada com senha forte (não usar fallback)
+- [ ] PostgreSQL configurado com `pg_hba.conf` restrito a localhost
+- [ ] Backup do banco antes de upgrades
+
+---
+
 ## 🔍 Troubleshooting
 
 ### Problemas Comuns
